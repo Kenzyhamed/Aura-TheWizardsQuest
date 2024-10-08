@@ -1,3 +1,6 @@
+; in this test program we experiemented with creating the border for our game. 
+; we stored the address of the graphic we want to use in the correct screen memory address
+
 	processor 6502
 ; Memory locations
 
