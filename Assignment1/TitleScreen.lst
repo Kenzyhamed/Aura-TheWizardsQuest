@@ -1,0 +1,167 @@
+------- FILE TitleScreen.s LEVEL 1 PASS 3
+      1  138b ????						; this is our title screen. we loaded the hex values to write all the required info
+      2  138b ????						; (title, names, year) and draw a wizards hat. we are using the CHROUT routine to put these on the screen.
+      3  138b ????						; we stored all the color data in another HEX variable.
+      4  138b ????						; since the counter maxes out at 255 we have another color memory address variable that starts at 38400 + 255
+      5  138b ????						; so we can starts from 0 again and continue updating the color memory
+      6  138b ????
+      7  138b ????				      processor	6502
+      8  138b ????
+      9  138b ????	       ff d2	   CHROUT     =	$ffd2	; KERNAL routine to output a character
+     10  138b ????	       ff e4	   GETIN      =	$FFE4	; Address for GETIN
+     11  138b ????	       ff cc	   CLRCHN     =	$ffcc
+     12  138b ????	       ff ba	   HOME       =	$ffba
+     13  138b ????
+     14  138b ????	       1e 00	   SCREEN_MEM =	$1E00
+     15  138b ????	       96 00	   COLOR_MEM  =	$9600
+     16  138b ????	       96 ff	   NEXT_COLOR_MEM =	$96FF
+     17  138b ????	       90 0f	   BACKGROUND_COLOR_ADDRESS =	$900F	; Background color address
+     18  138b ????
+     19  1001					      org	$1001	; Starting memory location
+     20  1001
+------- FILE stub.s LEVEL 2 PASS 3
+      0  1001					      include	"stub.s"
+      1  1001							; BASIC stub
+      2  1001		       0b 10		      dc.w	nextstmt
+      3  1003		       0a 00		      dc.w	10
+      4  1005							;;; dc.b $9e, "4109", 0
+      5  1005		       9e 34 38 35*	      dc.b	$9e, [start]d, 0
+      6  100b				   nextstmt
+      7  100b		       00 00		      dc.w	0
+------- FILE TitleScreen.s
+     22  100d
+     23  100d				   msg
+     24  100d		       41 55 52 41*	      HEX	41 55 52 41 3A 54 48 45 20 57 49 5A 41 52 44 53 20 51 55 45 53 54 0D 53 48 41 48 5A 49 4C 4C 20 4E 41 56 45 45 44 0A 0D 4D 55 54 45 45 42 41 20 4A 41 4D 41 4C 0A 0D 4B 45 4E 5A 59 20 48 41 4D 45 44 0A 0D 32 30 32 34 0D 20 20 20 20 20 20 20 20 20 20 A6 0D 20 20 7A 20 20 20 20 20 20 A6 A6 A6 0D 20 20 20 20 20 20 20 20 A6 A6 A6 A6 A6 0D 20 20 20 20 7A 20 20 A6 A6 A6 A6 A6 A6 A6 0D 20 20 20 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 0D 20 20 20 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 0D 00
+     25  10ad
+     26  10ad				   msg2
+     27  10ad		       20 20 7a 20*	      HEX	20 20 7A 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 20 20 20 20 7A 0D 20 20 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 0D 20 20 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 20 20 7A 0D 20 20 20 20 76 76 76 76 76 76 76 76 76 76 76 76 76 0D 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 0D 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 20 20 7A 0D 0D 20 20 20 50 52 45 53 53 20 41 20 54 4F 20 50 4C 41 59 00
+     28  1137
+     29  1137				   colors
+     30  1137		       00 00 00 00*	      HEX	00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 01 00 00 00 00 00 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 01 01 01 01 01 01 01 00 00 00 00 00 00 00 01 00 00 00 00 00 01 01 01 01 01 01 01 01 01 00 00 00 00 00 01 00 00 00 00 00 01 01 01 01 01 01 01 01 01 01 01 00 00 00 00 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 04 01 01 01 01 01 01 01 01 01 01 01 01 01 07 01 01 01 01 01 01 04 04 04 08
+     31  11de				   colors2
+     32  11de		       01 01 01 01*	      HEX	01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 01 01 07 01 01 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 07 01 01 04 04 04 04 04 04 04 04 04 04 04 01 01 01 01 07 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 01 01 07 01 01 01 01 01 01 01 07 07 07 07 07 08
+     33  128c				   colors3
+     34  128c		       07 07 07 07*	      HEX	07 07 07 07 07 07 07 07 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 01 01 07 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 01 01 01 08
+     35  12f2
+     36  12f2							; our program starts here
+     37  12f2				   start
+     38  12f2		       20 fd 12 	      JSR	clear_screen
+     39  12f5		       a9 00		      lda	#$00	; Load the color black
+     40  12f7		       8d 0f 90 	      sta	BACKGROUND_COLOR_ADDRESS	; Store it in the memory
+     41  12fa		       4c 05 13 	      JMP	title_screen
+     42  12fd
+     43  12fd				   clear_screen
+     44  12fd		       a9 93		      LDA	#$93
+     45  12ff		       20 d2 ff 	      JSR	CHROUT
+     46  1302		       20 cc ff 	      JSR	CLRCHN
+     47  1305
+     48  1305				   title_screen
+     49  1305		       a2 00		      LDX	#0	; Initialize index to read msg
+     50  1307		       4c 0a 13 	      JMP	print_section_one
+     51  130a
+     52  130a				   print_section_one
+     53  130a		       bd 0d 10 	      LDA	msg,X	;Load character
+     54  130d
+     55  130d		       c9 00		      CMP	#$00	;Is it 00
+     56  130f		       f0 11		      BEQ	reset_x	;If yes move on to get input
+     57  1311
+     58  1311		       20 d2 ff 	      JSR	CHROUT	;Print character
+     59  1314
+     60  1314		       e8		      INX		;Increment index
+     61  1315
+     62  1315		       4c 0a 13 	      JMP	print_section_one	;Repeat
+     63  1318
+     64  1318				   colour_memory_black
+     65  1318		       a9 04		      Lda	#$04
+     66  131a		       99 00 96 	      Sta	COLOR_MEM,Y
+     67  131d		       e8		      INX		;Increment index
+     68  131e		       c8		      INY
+     69  131f
+     70  131f		       4c 0a 13 	      JMP	print_section_one
+     71  1322
+     72  1322				   reset_x
+     73  1322		       a2 00		      LDX	#0
+     74  1324
+     75  1324		       4c 27 13 	      JMP	print_section_two
+     76  1327
+     77  1327				   print_section_two
+     78  1327		       bd ad 10 	      LDA	msg2,X	;Load character
+     79  132a
+     80  132a		       c9 00		      CMP	#$00	;Is it 00
+     81  132c		       f0 07		      BEQ	color_screen	;If yes move on to get input
+     82  132e
+     83  132e		       20 d2 ff 	      JSR	CHROUT	;Print character
+     84  1331
+     85  1331		       e8		      INX
+     86  1332
+     87  1332		       4c 27 13 	      JMP	print_section_two	;Repeat
+     88  1335
+     89  1335				   color_screen
+     90  1335		       a2 00		      LDX	#0
+     91  1337		       a0 00		      LDY	#0
+     92  1339
+     93  1339		       4c 3c 13 	      JMP	color
+     94  133c				   color
+     95  133c		       bd 37 11 	      LDA	colors,X
+     96  133f		       c9 08		      CMP	#$08	; using 08 to move on
+     97  1341		       f0 08		      BEQ	cont_color_screen
+     98  1343
+     99  1343		       99 00 96 	      Sta	COLOR_MEM,Y
+    100  1346
+    101  1346		       e8		      INX
+    102  1347		       c8		      INY
+    103  1348
+    104  1348		       4c 3c 13 	      JMP	color
+    105  134b
+    106  134b				   cont_color_screen
+    107  134b		       a2 00		      LDX	#0
+    108  134d		       4c 50 13 	      JMP	color2
+    109  1350
+    110  1350				   color2
+    111  1350		       bd de 11 	      LDA	colors2,X
+    112  1353		       c9 08		      CMP	#$08	; using 08 to move on
+    113  1355		       f0 31		      BEQ	inf_loop
+    114  1357
+    115  1357		       99 00 96 	      Sta	COLOR_MEM,Y
+    116  135a
+    117  135a		       e8		      INX
+    118  135b		       c8		      INY
+    119  135c
+    120  135c		       c0 ff		      CPY	#$FF	; Compare Y to 255
+    121  135e		       f0 03		      BEQ	use_next_color_mem
+    122  1360
+    123  1360		       4c 50 13 	      JMP	color2
+    124  1363
+    125  1363				   use_next_color_mem
+    126  1363		       a0 00		      LDY	#0
+    127  1365
+    128  1365				   color3
+    129  1365		       bd de 11 	      LDA	colors2,X
+    130  1368		       c9 08		      CMP	#$08
+    131  136a		       f0 08		      BEQ	cont_color_screen_2
+    132  136c
+    133  136c		       99 ff 96 	      Sta	NEXT_COLOR_MEM,Y
+    134  136f
+    135  136f		       e8		      INX
+    136  1370		       c8		      INY
+    137  1371
+    138  1371		       4c 65 13 	      JMP	color3
+    139  1374
+    140  1374				   cont_color_screen_2
+    141  1374		       a2 00		      LDX	#0
+    142  1376		       4c 79 13 	      JMP	color4
+    143  1379
+    144  1379				   color4
+    145  1379		       bd 8c 12 	      LDA	colors3,X
+    146  137c		       c9 08		      CMP	#$08
+    147  137e		       f0 08		      BEQ	inf_loop
+    148  1380
+    149  1380		       99 ff 96 	      Sta	NEXT_COLOR_MEM,Y
+    150  1383
+    151  1383		       e8		      INX
+    152  1384		       c8		      INY
+    153  1385
+    154  1385		       4c 79 13 	      JMP	color4
+    155  1388
+    156  1388				   inf_loop
+    157  1388		       4c 88 13 	      JMP	inf_loop

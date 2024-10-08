@@ -1,0 +1,153 @@
+------- FILE GemCollection.s LEVEL 1 PASS 3
+      1  10b5 ????						; this test program is testing placing gems at certain memory locations and being able to
+      2  10b5 ????						; collect them. when a number, 1, 2, or 3, is pressed, the corresponding gem is
+      3  10b5 ????						; "collected" and the counter in the top right of the screen is incremented.
+      4  10b5 ????						; we used a key press to simulate "collision".
+      5  10b5 ????
+      6  10b5 ????				      processor	6502
+      7  10b5 ????
+      8  10b5 ????	       ff d2	   CHROUT     =	$ffd2	; KERNAL routine to output a character
+      9  10b5 ????	       ff e4	   GETIN      =	$FFE4	; Address for GETIN
+     10  10b5 ????	       ff cc	   CLRCHN     =	$FFCC
+     11  10b5 ????	       1e 00	   SCREEN_MEM =	$1E00
+     12  10b5 ????
+     13  10b5 ????	       1e 1e	   GEM_ONE_SCREEN_LOCATION =	$1E1E
+     14  10b5 ????	       96 1e	   GEM_ONE_COLOR_LOCATION =	$961E
+     15  10b5 ????
+     16  10b5 ????	       1e 78	   GEM_TWO_SCREEN_LOCATION =	$1E78
+     17  10b5 ????	       96 78	   GEM_TWO_COLOR_LOCATION =	$9678
+     18  10b5 ????
+     19  10b5 ????	       1f 0e	   GEM_THREE_SCREEN_LOCATION =	$1F0E
+     20  10b5 ????	       97 0e	   GEM_THREE_COLOR_LOCATION =	$970E
+     21  10b5 ????
+     22  10b5 ????	       1e 15	   GEMS_COLLECTED =	$1E15
+     23  10b5 ????
+     24  10b5 ????	       96 00	   COLOR_MEM  =	$9600
+     25  10b5 ????
+     26  1001					      org	$1001	; Starting memory location
+     27  1001
+     28  1001		       10 03	   COUNTER    =	$1003
+     29  1001
+------- FILE stub.s LEVEL 2 PASS 3
+      0  1001					      include	"stub.s"
+      1  1001							; BASIC stub
+      2  1001		       0b 10		      dc.w	nextstmt
+      3  1003		       0a 00		      dc.w	10
+      4  1005							;;; dc.b $9e, "4109", 0
+      5  1005		       9e 34 31 33*	      dc.b	$9e, [start]d, 0
+      6  100b				   nextstmt
+      7  100b		       00 00		      dc.w	0
+------- FILE GemCollection.s
+     31  100d				   msg
+     32  100d		       20 20 20 20*	      HEX	20 20 20 20 20 20 07 05 0D 13 20 03 0F 0C 0C 05 03 14 05 04 3A 30 00
+     33  1024
+     34  1024							; our program starts here
+     35  1024				   start
+     36  1024		       a9 93		      LDA	#$93
+     37  1026		       20 d2 ff 	      JSR	CHROUT
+     38  1029		       20 cc ff 	      JSR	CLRCHN
+     39  102c
+     40  102c		       a9 30		      LDA	#$30
+     41  102e		       8d 03 10 	      STA	COUNTER
+     42  1031
+     43  1031		       20 37 10 	      JSR	counter_display
+     44  1034		       4c 4d 10 	      JMP	place_gems
+     45  1037
+     46  1037
+     47  1037				   counter_display
+     48  1037		       a2 00		      LDX	#0	; Initialize index
+     49  1039
+     50  1039				   print_char
+     51  1039		       bd 0d 10 	      LDA	msg,X	;Load character
+     52  103c
+     53  103c		       c9 00		      CMP	#$00	;Is it 00
+     54  103e		       f0 0c		      BEQ	return	;If yes move on to get input
+     55  1040
+     56  1040							;JSR CHROUT ;Print character
+     57  1040		       9d 00 1e 	      STA	SCREEN_MEM,X
+     58  1043
+     59  1043		       a9 00		      LDA	#$00
+     60  1045		       9d 00 96 	      STA	COLOR_MEM,X
+     61  1048
+     62  1048		       e8		      INX		;Increment index
+     63  1049
+     64  1049		       4c 39 10 	      JMP	print_char	;Repeat
+     65  104c
+     66  104c				   return
+     67  104c		       60		      RTS
+     68  104d
+     69  104d				   place_gems
+     70  104d		       a9 5a		      LDA	#$5A
+     71  104f
+     72  104f		       8d 1e 1e 	      STA	GEM_ONE_SCREEN_LOCATION
+     73  1052		       8d 78 1e 	      STA	GEM_TWO_SCREEN_LOCATION
+     74  1055		       8d 0e 1f 	      STA	GEM_THREE_SCREEN_LOCATION
+     75  1058
+     76  1058		       a9 07		      LDA	#$07
+     77  105a
+     78  105a		       8d 1e 96 	      STA	GEM_ONE_COLOR_LOCATION
+     79  105d		       8d 78 96 	      STA	GEM_TWO_COLOR_LOCATION
+     80  1060		       8d 0e 97 	      STA	GEM_THREE_COLOR_LOCATION
+     81  1063
+     82  1063		       4c 66 10 	      JMP	get_input
+     83  1066
+     84  1066				   get_input
+     85  1066		       20 e4 ff 	      JSR	GETIN
+     86  1069
+     87  1069		       c9 00		      CMP	#$00
+     88  106b		       f0 f9		      BEQ	get_input
+     89  106d
+     90  106d		       c9 31		      CMP	#$31
+     91  106f		       f0 0b		      BEQ	collect_gem_one
+     92  1071
+     93  1071		       c9 32		      CMP	#$32
+     94  1073		       f0 16		      BEQ	collect_gem_two
+     95  1075
+     96  1075		       c9 33		      CMP	#$33
+     97  1077		       f0 21		      BEQ	collect_gem_three
+     98  1079
+     99  1079		       4c 66 10 	      JMP	get_input
+    100  107c
+    101  107c				   collect_gem_one
+    102  107c							;has it been collected?
+    103  107c		       ad 1e 1e 	      LDA	GEM_ONE_SCREEN_LOCATION
+    104  107f		       c9 20		      CMP	#$20
+    105  1081
+    106  1081		       f0 e3		      BEQ	get_input
+    107  1083
+    108  1083		       a9 20		      LDA	#$20
+    109  1085		       8d 1e 1e 	      STA	GEM_ONE_SCREEN_LOCATION
+    110  1088
+    111  1088		       4c a9 10 	      JMP	increment_gem_counter
+    112  108b
+    113  108b				   collect_gem_two
+    114  108b							;has it been collected?
+    115  108b		       ad 78 1e 	      LDA	GEM_TWO_SCREEN_LOCATION
+    116  108e		       c9 20		      CMP	#$20
+    117  1090
+    118  1090		       f0 d4		      BEQ	get_input
+    119  1092
+    120  1092		       a9 20		      LDA	#$20
+    121  1094		       8d 78 1e 	      STA	GEM_TWO_SCREEN_LOCATION
+    122  1097
+    123  1097		       4c a9 10 	      JMP	increment_gem_counter
+    124  109a
+    125  109a				   collect_gem_three
+    126  109a							;has it been collected?
+    127  109a		       ad 0e 1f 	      LDA	GEM_THREE_SCREEN_LOCATION
+    128  109d		       c9 20		      CMP	#$20
+    129  109f
+    130  109f		       f0 c5		      BEQ	get_input
+    131  10a1
+    132  10a1		       a9 20		      LDA	#$20
+    133  10a3		       8d 0e 1f 	      STA	GEM_THREE_SCREEN_LOCATION
+    134  10a6
+    135  10a6		       4c a9 10 	      JMP	increment_gem_counter
+    136  10a9
+    137  10a9				   increment_gem_counter
+    138  10a9		       ee 03 10 	      INC	COUNTER
+    139  10ac		       ad 03 10 	      LDA	COUNTER
+    140  10af
+    141  10af		       8d 15 1e 	      STA	GEMS_COLLECTED
+    142  10b2
+    143  10b2		       4c 66 10 	      JMP	get_input
