@@ -1,3 +1,5 @@
+; in this test program we tested changing the background colour of the vic 20 
+
 	processor 6502
 ; Memory locations
 
