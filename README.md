@@ -1,9 +1,9 @@
 # Aura: The Wizards Quest
 
 ## Assignment 1
-1. Changing Vic 20 background color
-2. Border around the screen
-3. Basic platform 
+1. BackgrounColor - changing Vic 20 background color
+2. Border - border around the screen
+3. Platform - basic platform 
 4. TitleScreen - displaying our groups names and some titlescreen art
 5. PressKeyToStartGame - press the letter A to start the game
 6. SoundEffects - the different sound effects for the characters interactions with platforms/portals
