@@ -1,4 +1,4 @@
-ALL	= 	PressKeyToStartGame.prg SoundEffects.prg TitleScreenMusic.prg TitleScreen.prg GemCollection.prg BackgroundColor.prg Border.prg LeftJandRightL.prg
+ALL	= 	PressKeyToStartGame.prg SoundEffects.prg TitleScreenMusic.prg TitleScreen.prg GemCollection.prg BackgroundColor.prg Border.prg LeftJandRightL.prg MovingPlatform.prg Platform.prg Jump.prg
 DASM    = 	~aycock/599.82/bin/dasm
 
 all:		$(ALL)
@@ -15,7 +15,7 @@ PressKeyToStartGame.prg:	PressKeyToStartGame.s stub.s
 SoundEffects.prg:      SoundEffects.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 		
-Music.prg:      TitleScreenMusic.s stub.s
+TitleScreenMusic.prg:      TitleScreenMusic.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 TitleScreen.prg:      TitleScreen.s stub.s
@@ -31,6 +31,15 @@ Border.prg:     Border.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 LeftJandRightL.prg:      GemCollection.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+MovingPlatform.prg:      MovingPlatform.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+Platform.prg:      Platform.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+Jump.prg:      Jump.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 # Handle conditional copying for emulator
