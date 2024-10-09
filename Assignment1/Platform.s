@@ -1,3 +1,5 @@
+; in this test project we experimented with creating a basic platform on the screen
+
 	processor 6502
 ; Memory locations
 
