@@ -5,42 +5,49 @@ all:		$(ALL)
 
 A1Folder = AuraTheWizardsQuest-A1
 
+# if this is passed as 1 then the files will be copient into the A1Folder with the correct permissions
+# ensure your www/ and $(A1Folder)/ directories have the correct permissions 
+FOR_EMULATOR ?= 0
+
 PressKeyToStartGame.prg:	PressKeyToStartGame.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/PressKeyToStartGame.prg
-		chmod 644 ~/www/$(A1Folder)/PressKeyToStartGame.prg 
 
 SoundEffects.prg:      SoundEffects.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/SoundEffects.prg
-		chmod 644 ~/www/$(A1Folder)/SoundEffects.prg
-
-TitleScreenMusic.prg:      TitleScreenMusic.s stub.s
+		
+Music.prg:      TitleScreenMusic.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/TitleScreenMusic.prg
-		chmod 644 ~/www/$(A1Folder)/TitleScreenMusic.prg
 
 TitleScreen.prg:      TitleScreen.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/TitleScreen.prg
-		chmod 644 ~/www/$(A1Folder)/TitleScreen.prg
 
 GemCollection.prg:      GemCollection.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/GemCollection.prg
-		chmod 644 ~/www/$(A1Folder)/GemCollection.prg
 
 BackgroundColor.prg:      BackgroundColor.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/BackgroundColor.prg
-		chmod 644 ~/www/$(A1Folder)/BackgroundColor.prg
 
 Border.prg:     Border.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/Border.prg
-		chmod 644 ~/www/$(A1Folder)/Border.prg
 
 LeftJandRightL.prg:      GemCollection.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
-		cp $@ ~/www/$(A1Folder)/LeftJandRightL.prg
-		chmod 644 ~/www/$(A1Folder)/LeftJandRightL.prg
+
+# Handle conditional copying for emulator
+ifeq ($(FOR_EMULATOR), 1)
+post-build:
+	for prg in $(ALL); do \
+		cp $$prg ~/www/$(A1Folder)/$$prg; \
+		chmod 644 ~/www/$(A1Folder)/$$prg; \
+	done
+else
+post-build:
+	@echo "Skipping emulator copy"
+endif
+
+# Call the post-build step after all .prg files are built
+.PHONY: post-build
+all: post-build
+
+clean:
+	/bin/rm -f *~ *.lst $(ALL)
