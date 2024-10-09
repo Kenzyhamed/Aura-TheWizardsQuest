@@ -1,3 +1,5 @@
+; in this test project we experimented with creating our moving platforms
+
 	processor 6502
 ; Memory locations
 

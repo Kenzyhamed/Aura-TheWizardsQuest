@@ -1,3 +1,5 @@
+; in this test project, we experimented with moving a character left and right using the j and l keys
+
     processor 6502
 ; KERNAL addresses
 CHROUT  = $FFD2          ; Output character
