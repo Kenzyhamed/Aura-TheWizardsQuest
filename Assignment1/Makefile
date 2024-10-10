@@ -12,13 +12,13 @@ FOR_EMULATOR ?= 0
 PressKeyToStartGame.prg:	PressKeyToStartGame.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
+TitleScreen.prg:      TitleScreen.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
 SoundEffects.prg:      SoundEffects.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 		
 TitleScreenMusic.prg:      TitleScreenMusic.s stub.s
-		$(DASM) $< -o$@ -l$(<:.s=.lst)
-
-TitleScreen.prg:      TitleScreen.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 GemCollection.prg:      GemCollection.s stub.s
