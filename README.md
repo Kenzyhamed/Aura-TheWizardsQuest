@@ -1,7 +1,7 @@
 # Aura: The Wizards Quest
 
 ## Assignment 1
-1. BackgrounColor - changing Vic 20 background color
+1. BackgroundColor - changing Vic 20 background color
 2. Border - border around the screen
 3. Platform - basic platform 
 4. TitleScreen - displaying our groups names and some titlescreen art
