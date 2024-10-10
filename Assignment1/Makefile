@@ -30,7 +30,7 @@ BackgroundColor.prg:      BackgroundColor.s stub.s
 Border.prg:     Border.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
-LeftJandRightL.prg:      GemCollection.s stub.s
+LeftJandRightL.prg:      LeftJandRightL.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 MovingPlatform.prg:      MovingPlatform.s stub.s
