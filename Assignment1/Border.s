@@ -42,7 +42,7 @@ draw_top_border:
     	dex                   ; Decrement X (count down the number of characters)
     	bne draw_top_border    ; Check if the x is 0
 	
-;Draw the side borders, taking into account 44 addresses per row
+;Draw the side borders
     	ldx #SCREEN_HEIGHT-1    ; Number of visible rows (23 rows for VIC-20)
 	lda #<SCREEN_START      ; Load the low byte of the screen start address
         sta SCREEN_POS_LO       
