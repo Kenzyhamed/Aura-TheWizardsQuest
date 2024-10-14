@@ -21,10 +21,9 @@
 1. ssh into the CPSC machine
 2. Navigate to ~/www/
 3. Run `mkdir AuraTheWizardsQuest-A1` to create a folder
-4. Run `cd AuraTheWizardsQuest-A1`
-5. Run `chmod 711` to update the permissions on the folder
-6. Navigate back to the Assignment1 directiory
-7. Run `make FOR_EMULATOR=1`
+4. Run `chmod 711 AuraTheWizardsQuest-A1` to update the permissions on the folder
+5. Navigate back to the Assignment1 directiory
+6. Run `make FOR_EMULATOR=1`
 
 - You should be able to run any project via the emulator using (replace [your.username] and [ProjectName] with the correct values)
 https://cspages.ucalgary.ca/~aycock/599.82/vic20/?file=https://cspages.ucalgary.ca/~[your.username]/AuraTheWizardsQuest-A1/[ProjectName].prg
