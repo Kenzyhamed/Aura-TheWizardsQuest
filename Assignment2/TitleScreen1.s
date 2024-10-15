@@ -7,19 +7,17 @@
         processor 6502
 
 CHROUT = $ffd2       ; KERNAL routine to output a character
-GETIN = $FFE4      ; Address for GETIN
 CLRCHN = $ffcc
 HOME = $ffba
 
 SCREEN_MEM = $1E00
 COLOR_MEM = $9600
 NEXT_COLOR_MEM = $96FF
-BACKGROUND_COLOR_ADDRESS = $900F    ; Background color address 
 
-COUNT_FOR_LOOP = $1003
-COLOR_FOR_LOOP = $1004
-COUNTER = $1005
-USE_NEXT_COLOR_MEMORY =  $1006
+COUNT_FOR_LOOP = $0003
+COLOR_FOR_LOOP = $0004
+COUNTER = $0005
+USE_NEXT_COLOR_MEMORY =  $0006
 
         org $1001    ; Starting memory location
 
@@ -39,10 +37,7 @@ countValues:
 
 ; our program starts here
 start:
-        JSR clear_screen
-        lda #$00                ; Load the color black
-        sta BACKGROUND_COLOR_ADDRESS    ; Store it in the memory
-        JMP title_screen
+        JMP clear_screen
 
 clear_screen:
         LDA #$93
@@ -59,16 +54,11 @@ print_section_one:
         CMP #$00 ;Is it 00
         BEQ reset_x 
 
-        JSR CHROUT ;Print character
+        JSR print
+        JMP print_section_one
 
-        INX ;Increment index
-
-        JMP print_section_one ;Repeat
-
-; reset x and print the next section
 reset_x:
         LDX #0
-        JMP print_section_two
 
 print_section_two:
         LDA msg2,X 
@@ -76,16 +66,17 @@ print_section_two:
         CMP #$00 ;Is it 00
         BEQ color_screen ;If yes move on to coloring the screen
 
+        JSR print
+        JMP print_section_two
+
+print:
         JSR CHROUT ;Print character
-	
 	INX
-
-        JMP print_section_two ;Repeat
-
+        RTS
+        
 color_screen:
         LDX #-1         ; load the index for the color / count we want
         JMP next_color
- 
 
 color_loop:
         LDA USE_NEXT_COLOR_MEMORY  ; Check if USE_NEXT_COLOR_MEMORY is set to 01
