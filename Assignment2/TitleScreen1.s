@@ -16,6 +16,11 @@ COLOR_MEM = $9600
 NEXT_COLOR_MEM = $96FF
 BACKGROUND_COLOR_ADDRESS = $900F    ; Background color address 
 
+COUNT_FOR_LOOP = $1003
+COLOR_FOR_LOOP = $1004
+COUNTER = $1005
+USE_NEXT_COLOR_MEMORY =  $1006
+
         org $1001    ; Starting memory location
 
         include "stub.s"
@@ -26,12 +31,11 @@ msg:
 msg2:
         HEX 20 20 7A 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 20 20 20 20 7A 0D 20 20 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 0D 20 20 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 20 20 7A 0D 20 20 20 20 76 76 76 76 76 76 76 76 76 76 76 76 76 0D 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 0D 20 20 20 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 A6 20 20 7A 0D 0D 20 20 20 50 52 45 53 53 20 41 20 54 4F 20 50 4C 41 59 00
 
-colors:
-        HEX 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 01 00 00 00 00 00 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 01 01 01 01 01 01 01 00 00 00 00 00 00 00 01 00 00 00 00 00 01 01 01 01 01 01 01 01 01 00 00 00 00 00 01 00 00 00 00 00 01 01 01 01 01 01 01 01 01 01 01 00 00 00 00 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 04 01 01 01 01 01 01 01 01 01 01 01 01 01 07 01 01 01 01 01 01 04 04 04 08
-colors2:
-        HEX 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 01 01 07 01 01 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 07 01 01 04 04 04 04 04 04 04 04 04 04 04 01 01 01 01 07 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 01 01 07 01 01 01 01 01 01 01 07 07 07 07 07 08
-colors3:
-        HEX 07 07 07 07 07 07 07 07 01 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 01 01 01 01 01 01 01 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 01 01 07 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 01 01 01 08
+colorValues:
+        HEX 00 04 07 04 07 04 07 04 07 04 07 04 07 00 FF
+
+countValues:
+        HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
 
 ; our program starts here
 start:
@@ -53,7 +57,7 @@ print_section_one:
         LDA msg,X ;Load character
 
         CMP #$00 ;Is it 00
-        BEQ reset_x ;If yes move on to get input
+        BEQ reset_x 
 
         JSR CHROUT ;Print character
 
@@ -61,24 +65,16 @@ print_section_one:
 
         JMP print_section_one ;Repeat
 
-colour_memory_black:
-        Lda #$04
-        Sta COLOR_MEM,Y
-        INX ;Increment index
-        INY
-
-        JMP print_section_one
-
+; reset x and print the next section
 reset_x:
         LDX #0
-
         JMP print_section_two
 
 print_section_two:
-        LDA msg2,X ;Load character
+        LDA msg2,X 
 
         CMP #$00 ;Is it 00
-        BEQ color_screen ;If yes move on to get input
+        BEQ color_screen ;If yes move on to coloring the screen
 
         JSR CHROUT ;Print character
 	
@@ -87,71 +83,73 @@ print_section_two:
         JMP print_section_two ;Repeat
 
 color_screen:
-        LDX #0
-        LDY #0
+        LDX #-1         ; load the index for the color / count we want
+        JMP next_color
+ 
 
-        JMP color
-color:
-        LDA colors,X
-        CMP #$08 	; using 08 to move on
-        BEQ cont_color_screen
+color_loop:
+        LDA USE_NEXT_COLOR_MEMORY  ; Check if USE_NEXT_COLOR_MEMORY is set to 01
+        CMP #$01  
+        BEQ higher_color_memory ; If 01, go to higher color memory
 
-	Sta COLOR_MEM,Y
+        ; default case, lower color memory
+        
+lower_color_memory:
+        LDA COLOR_FOR_LOOP   ; Load the color
+        STA COLOR_MEM,Y      ; Store the color in COLOR_MEM
 
-        INX
-        INY
+        ; increment counter
+        JMP increment_counter
 
-        JMP color
 
-cont_color_screen:
-        LDX #0
-        JMP color2
+higher_color_memory:
+        LDA COLOR_FOR_LOOP   
+        STA NEXT_COLOR_MEM,Y 
 
-color2:
-        LDA colors2,X
-        CMP #$08        ; using 08 to move on
-        BEQ inf_loop
+        ; increment counter
+        JMP increment_counter
 
-        Sta COLOR_MEM,Y
+increment_counter:
+        INY                  ; Increment Y for next memory location
+        
+        CPY #$FF
+        BEQ use_next_color_memory
 
-        INX
-        INY
+        INC COUNTER
+        LDA COUNTER
 
-        CPY #$FF               ; Compare Y to 255
-        BEQ use_next_color_mem
+        CMP COUNT_FOR_LOOP   ; compare counter with count for this color
+        BEQ next_color       ; if counter matches, move to next color
 
-        JMP color2
+        BNE color_loop
 
-use_next_color_mem:
-        LDY #0
+next_color:
+        INX                 ; Move to the next color
 
-color3:
-        LDA colors2,X
-        CMP #$08
-        BEQ cont_color_screen_2
+        ; Reset the counter
+        LDA #00
+        STA COUNTER
 
-        Sta NEXT_COLOR_MEM,Y
+        ; Load the next color and count values
+        LDA countValues,X
+        STA COUNT_FOR_LOOP
 
-        INX
-        INY
+        LDA colorValues,X
+        STA COLOR_FOR_LOOP
 
-        JMP color3
+        CMP #$FF             ; Check if it's the end marker (FF)
+        BEQ inf_loop         ; Jump to infinite loop if done
 
-cont_color_screen_2:
-        LDX #0
-        JMP color4
+        JMP color_loop       ; Continue processing colors
 
-color4:
-        LDA colors3,X
-        CMP #$08
-        BEQ inf_loop
+use_next_color_memory:
+        ; Set USE_NEXT_COLOR_MEMORY to 1 to start using NEXT_COLOR_MEM
+        LDA #01
+        STA USE_NEXT_COLOR_MEMORY
 
-        Sta NEXT_COLOR_MEM,Y
+        LDY #00
 
-        INX
-        INY
-
-        JMP color4
+        JMP color_loop       ; Continue with the updated memory
 
 inf_loop:
-        JMP inf_loop
+        JMP inf_loop         ; Infinite loop (exit point)
