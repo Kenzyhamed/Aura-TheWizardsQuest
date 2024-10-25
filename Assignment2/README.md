@@ -1,3 +1,5 @@
+## Our Attempt With Chat GPT
+
 We tried using ChatGPT as our AI model to compress the code. Our first prompt was generic:
 
 “Compress this code (pasted the code).”
