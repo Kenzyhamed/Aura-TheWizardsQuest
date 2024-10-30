@@ -1,4 +1,4 @@
-ALL	= 	TitleScreen1.prg 
+ALL	= 	TitleScreen1.prg ChatGPT1.prg ChatGPT2.prg ChatGPT3.prg ChatGPT4.prg   
 DASM    = 	~aycock/599.82/bin/dasm
 
 all:		$(ALL)
@@ -10,6 +10,18 @@ A2Folder = AuraTheWizardsQuest-A2
 FOR_EMULATOR ?= 0
 
 TitleScreen1.prg:      TitleScreen1.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+ChatGPT1.prg:      ChatGPT1.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+ChatGPT2.prg:      ChatGPT2.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+ChatGPT3.prg:      ChatGPT3.s stub.s
+		$(DASM) $< -o$@ -l$(<:.s=.lst)
+
+ChatGPT4.prg:      ChatGPT4.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 
