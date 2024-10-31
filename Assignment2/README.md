@@ -50,5 +50,16 @@ I downloaded Exomizer on my Windows laptop and used the WSL (Windows Subsystem f
 ./exomizer sfx sys -t 20 TitleScreen.prg -o TitleScreenExomizer.prg
 
 
+## Our Attempt With zx0-6502 Compressor/Decompressor -Kenzy
+
+In the beginning I had some trouble with the linker, when running the MakerFile, my computer did not find a main function anywhere. However, after running it on a different computer it found the main file but for some reason it wanted an input file. So i went into the src file where all the compressor and desompressor C files were and ran "gcc -ozx0 compress.c memory.c optimize.c zx0.c" this compiled all the files. Next, I needed to make the bsave file. Another issue that arised was that on my computer it said that the TitleScreen.s file had a segmentation fault. But it worked fine on the ssh so i had go onto the ssh and hnage it into a prg file then download it on to my local drive. Now, I was able to run the file on the VIC-20 emulator and save it as a bsave. I first understood that i was meant to save where the data was stored, but after talking the professor I learned that i had to save the screen data. Now i was able to use 
+that to run it on the C code to compress and decompress. This worked with no issues. But it should be noted that uploading the original bsave into the VIC-20 doesnt give the title screen.
+
+
+Next I had to make an assembler file that combined the decomcompressor instruction, the compressed code and stub.s. This took a lot of time because i had to read the decompressor instrution and find out what i had to jump to to perform the decompress, also i had to understand how to run and display the file after. This took a looking in the manual and reading online, because i was beyond confused. Next i realized that I needed to edit the decompressor instrauction because it wasnt compatible with dasm. There was no explanation of what the original instructions were compatible with but i did search up certain commands like equ and found that they were compatible with C64. So i translated it over to dasm. I remade  the final prg by running main.s (the assembler of the org) and below is what i got. In between all of these steps i did have issues with the memory saved in the bsave and had to experiment with the memory addresses to get it to work. I also had issues with the final prg file not displaying so i had to make it loop endlessely while still displaying. Another issue i had with translating the decompressor instruction file wrong, and the main.s program was not working properly-so i had to change the addresses that it was saving the decompressed code to and how it was handling the stub file (i thought the stub file had to be loaded in like compressed data, instead of simply including it at the top). 
+
+This was the result:
+
+<img width="755" alt="Screenshot 2024-10-30 at 9 44 43 PM" src="https://github.com/user-attachments/assets/0cb5966b-1358-417a-897b-2dc7d3ef10ae">
 
 
