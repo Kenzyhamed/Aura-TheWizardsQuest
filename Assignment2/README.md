@@ -1,3 +1,9 @@
+## Manual compressing
+
+For our manual compression process, we began by analyzing the code structure to identify recurring patterns that could be optimized for space. We specifically focused on sections with repeated elements, like the "hat" graphic, which initially took up a significant portion of memory. Instead of storing the entire hat shape, we condensed the data by storing each unique character, accompanied by a count of its repetitions. This allowed us to reproduce the pattern dynamically while eliminating redundant storage, thus conserving space.
+
+Next, we applied a similar compression technique to color data. By storing color values with their respective counts, we avoided duplicating color sequences and simplified the code logic for rendering. Both of these adjustments led to a significant reduction in the overall size, bringing it down from 908 bytes to just 384 bytes.
+
 ## Our Attempt With Chat GPT
 
 We tried using ChatGPT as our AI model to compress the code. Our first prompt was generic:
