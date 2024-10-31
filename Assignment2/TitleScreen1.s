@@ -24,19 +24,19 @@ USE_NEXT_COLOR_MEMORY =  $0006
         include "stub.s"
 
 msg:
-        HEX 41 55 52 41 3A 54 48 45 20 57 49 5A 41 52 44 53 20 51 55 45 53 54 0D 53 48 41 48 5A 49 4C 4C 20 4E 41 56 45 45 44 0A 0D 4D 55 54 45 45 42 41 20 4A 41 4D 41 4C 0A 0D 4B 45 4E 5A 59 20 48 41 4D 45 44 0A 0D 32 30 32 34 0D 00
+        HEX 41 55 52 41 3A 54 48 45 20 57 49 5A 41 52 44 53 20 51 55 45 53 54 0D 53 48 41 48 5A 49 4C 4C 20 4E 41 56 45 45 44 0A 0D 4D 55 54 45 45 42 41 20 4A 41 4D 41 4C 0A 0D 4B 45 4E 5A 59 20 48 41 4D 45 44 0A 0D 32 30 32 34 0D 00 ;This is the data for inital text on the screen - Aura the Wizards qust, Muteba Jamal, Shahzill Naveed, Kenzy Hamed
 
 hatChar: 
-        HEX 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 A6 0D 20 7A 20 A6 20 7A 0D 20 A6 0D 20 A6 20 7A 0D 20 76 0D 20 A6 0D 20 A6 20 7A 0D 20 50 52 45 53 20 41 20 54 4F 20 50 4C 41 59 00 
+        HEX 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 A6 0D 20 7A 20 A6 20 7A 0D 20 A6 0D 20 A6 20 7A 0D 20 76 0D 20 A6 0D 20 A6 20 7A 0D 20 50 52 45 53 20 41 20 54 4F 20 50 4C 41 59 00 ; these are the values for the hat characters that need to be stored in the screen memory
 
 hatCharCount: 
-        HEX 0A 01 01 02 01 06 03 01 08 05 01 04 01 02 07 01 06 09 01 06 09 01 02 01 02 0B 04 01 01 05 0B 01 05 0B 02 01 01 04 0D 01 03 0F 01 03 0F 02 01 02 03 01 01 01 02 01 01 01 01 01 01 01 01 01 01 01
+        HEX 0A 01 01 02 01 06 03 01 08 05 01 04 01 02 07 01 06 09 01 06 09 01 02 01 02 0B 04 01 01 05 0B 01 05 0B 02 01 01 04 0D 01 03 0F 01 03 0F 02 01 02 03 01 01 01 02 01 01 01 01 01 01 01 01 01 01 01 ; this is the number of times the character in hatChar at the sam eindex needs to be repeated on the screen
 
 colorValues:
-        HEX 00 04 07 04 07 04 07 04 07 04 07 04 07 00 FF
+        HEX 00 04 07 04 07 04 07 04 07 04 07 04 07 00 FF ; these are the coor values that need to be stored in the screen mem
 
 countValues:
-        HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
+        HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF ; this is the number of times the color in the colorvalues at the same index needs to be repeated in the color memory
 
 ; our program starts here
 start:
