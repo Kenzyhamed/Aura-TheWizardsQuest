@@ -44,5 +44,11 @@ In another attempt, ChatGPT shrank down our message, resulting in our names gett
 After spending about 7-8 hours over the span of 3 days, we ultimately decided to give up on ChatGPT for this task. It was clear that it 
 would not be able to compress the code enough to surpass our manual efforts, and even if it did, the output would not match the original result, which was the goal of this assignment.
 
+## Our Attempt With Exomizer
+
+I downloaded Exomizer on my Windows laptop and used the WSL (Windows Subsystem for Linux) extension with Ubuntu to run the make command. After compiling, I created a .prg file for the title screen and ran various compression types on it, including level, raw, and mem. However, none of these worked as expected; they either returned syntax errors or produced no output. I then tried the sfx command, specifying the Vic-20 as the target, which successfully reduced the file size from 908 bytes to 603 bytes. I used the command:
+./exomizer sfx sys -t 20 TitleScreen.prg -o TitleScreenExomizer.prg
+
+
 
 
