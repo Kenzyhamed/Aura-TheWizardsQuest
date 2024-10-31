@@ -49,6 +49,9 @@ would not be able to compress the code enough to surpass our manual efforts, and
 I downloaded Exomizer on my Windows laptop and used the WSL (Windows Subsystem for Linux) extension with Ubuntu to run the make command. After compiling, I created a .prg file for the title screen and ran various compression types on it, including level, raw, and mem. However, none of these worked as expected; they either returned syntax errors or produced no output. I then tried the sfx command, specifying the Vic-20 as the target, which successfully reduced the file size from 908 bytes to 603 bytes. I used the command:
 ./exomizer sfx sys -t 20 TitleScreen.prg -o TitleScreenExomizer.prg
 
+I tried adding more arguments as well and to try to compress it more but the end result was the same
+./exomizer sfx sys -t 20 -p 100 -c -m 4096 -M 256 TitleScreen.prg -0 TitleScreenExomizer2.prg
+
 
 ## Our Attempt With zx0-6502 Compressor/Decompressor -Kenzy
 
