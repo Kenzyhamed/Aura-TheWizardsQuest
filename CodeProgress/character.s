@@ -9,6 +9,7 @@ SCREEN_MEM = $1E00
 COLOR_MEM = $9600
 
 CHAR_LOCATION = $1C00
+PLATFORM_LOCATION = $1c08
 VIC_CHAR_REG = $9005
 
         org $1001    ; Starting memory location
@@ -29,40 +30,43 @@ CHAR:
         dc.b %01000010
         dc.b %00111100
 
+PLATFORM:
+        org PLATFORM_LOCATION
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+
 
 ; our program starts here
 start:
        	lda #$93
         JSR CHROUT
-        JSR CLRCHN
-
-print_intro_msg:
-	LDX #0                ; Initialize index
-
-print_char:
-	LDA msg,X ;Load character
- 
-	CMP #$00 ;Is it 00
-	BEQ load_char ;If yes move on to get input
-
-	JSR CHROUT ;Print character
-	
-	INX ;Increment index
-	
-	JMP print_char ;Repeat             
+        JSR CLRCHN          
 
 load_char:
         ; point VIC to use custom character set
-        LDA #$FF
-        STA $9005              
+        lda #$FF
+        sta VIC_CHAR_REG          
 
 char_screen:
         ; display custom character on the screen
-        LDA #$00          
+        LDA #$00  
         STA SCREEN_MEM
-
        	LDA #$00
         STA COLOR_MEM
+
+        LDX #3 
+
+        ; display platform on the screen
+        LDA #$01
+        STA SCREEN_MEM,X
+        LDA #$00
+        STA COLOR_MEM,X
 
 loop:
         JMP loop                  
