@@ -3,68 +3,66 @@
 
 CHROUT = $ffd2       ; KERNAL routine to output a character
 CLRCHN = $ffcc
-HOME = $ffba
-GETIN = $FFE4      ; Address for GETIN
 
 
 SCREEN_MEM = $1E00
 COLOR_MEM = $9600
-NEXT_COLOR_MEM = $96FF
 
-COUNT_FOR_LOOP = $0003
-COLOR_FOR_LOOP = $0004
-COUNTER = $0005
-USE_NEXT_COLOR_MEMORY =  $0006
-
-NEWCHAR_LOCATION = $1100
+CHAR_LOCATION = $1C00
+VIC_CHAR_REG = $9005
 
         org $1001    ; Starting memory location
 
         include "stub.s"
 
-NEWCHAR:
-        org NEWCHAR_LOCATION
-        dc.b %00011000
-        dc.b %00100100
+msg:
+	HEX 50 52 45 53 53 20 41 20 54 4F 20 53 54 41 52 54 0D 00
+
+CHAR:
+        org CHAR_LOCATION
+        dc.b %00111100
         dc.b %01000010
-        dc.b %01111110
-        dc.b %01111110
+        dc.b %10100101
+        dc.b %10000001
+        dc.b %10100101
+        dc.b %10011001
         dc.b %01000010
-        dc.b %01000010
-        dc.b %00000000
+        dc.b %00111100
 
 
 ; our program starts here
 start:
        	lda #$93
         JSR CHROUT
-        JSR CLRCHN               
-        
-; we have this so we can debug (to be removed)
-wait_for_input:
-        JSR GETIN
+        JSR CLRCHN
 
-        CMP #'A
-        BEQ load_char
-        BNE wait_for_input
+print_intro_msg:
+	LDX #0                ; Initialize index
 
-wait_for_input2:
-        JSR GETIN
+print_char:
+	LDA msg,X ;Load character
+ 
+	CMP #$00 ;Is it 00
+	BEQ load_char ;If yes move on to get input
 
-        CMP #'0
-        BEQ wait_for_input2 
-        BNE char_screen
+	JSR CHROUT ;Print character
+	
+	INX ;Increment index
+	
+	JMP print_char ;Repeat             
 
 load_char:
-        ; point VIC to use custom character set at $1000
-        LDA #$FC 
+        ; point VIC to use custom character set
+        LDA #$FF
         STA $9005              
 
 char_screen:
         ; display custom character on the screen
-        LDA #$00                
-        STA SCREEN_MEM 
+        LDA #$00          
+        STA SCREEN_MEM
 
+       	LDA #$00
+        STA COLOR_MEM
 
 loop:
-        JMP wait_for_input2                  
+        JMP loop                  
