@@ -14,11 +14,13 @@ GETIN = $FFE4      ; Address for GETIN
 SCREEN_MEM = $1E00
 COLOR_MEM = $9600
 NEXT_COLOR_MEM = $96FF
+SCREEN_START_HI = $1E       ; High byte of screen memory start address ($1E00)
 
 COUNT_FOR_LOOP = $0003
 COLOR_FOR_LOOP = $0004
 COUNTER = $0005
 USE_NEXT_COLOR_MEMORY =  $0006
+
 
 SCREEN_POS_LO   = $00   ; Low byte of screen memory address
 SCREEN_POS_HI   = $01   ; High byte of screen memory address
@@ -47,6 +49,23 @@ colorValues:
 
 countValues:
         HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
+
+; Define the starting address in an array
+START_ADDRESS_NORMAL_PLATFORM:
+    .byte $62, $1F, $63, $1F, $64, $1F, $46, $1E, $47, $1E, $48, $1E  ; Low byte ($20), High byte ($1E)
+
+; Define the starting address in an array
+START_ADDRESS_COLOR_NORMAL_PLATFORM:
+    .byte $62, $97, $63, $97, $64, $97, $46, $96, $47, $96, $48, $96  ; Low byte ($20), High byte ($1E)
+
+START_ADDRESS_DANGER_PLATFORM:
+    .byte $40, $1F, $41, $1F, $42, $1F  ; Low byte ($20), High byte ($1E)
+
+; Define the starting address in an array
+START_ADDRESS_COLOR_DANGER_PLATFORM:
+    .byte $40, $97, $41, $97, $42, $97  ; Low byte ($20), High byte ($1E)
+
+
 
 ; our program starts here
 start:
@@ -261,5 +280,103 @@ draw_bottom_loop:
         dex                     ; Decrement the X counter
         bne draw_bottom_loop    ; Continue until X = 0`
 
+        ldx #$00
+        ldy #$00
+
+print_normal_platform:
+        ; Load the starting address into A
+        LDA START_ADDRESS_NORMAL_PLATFORM,x        
+        BEQ goto_color_normal_platform  
+        STA SCREEN_POS_LO        
+
+        INX
+
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_NORMAL_PLATFORM,x    
+        STA SCREEN_POS_HI        
+
+        LDA #$A0 
+        jsr draw_platform
+
+        INX
+              
+        JMP print_normal_platform
+
+goto_color_normal_platform:
+        ldx #$00
+
+color_normal_platform:
+        ; Load the starting address into A
+        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x  
+        BEQ goto_danger_platform      
+        STA COLOR_POS_LO       
+        
+        INX            
+        
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x    
+        STA COLOR_POS_HI      
+        
+        LDA #$02
+        jsr color_platform
+
+        INX
+
+        jmp color_normal_platform
+
+
+goto_danger_platform:
+        ldx #$00
+
+print_danger_platform:
+        ; Load the starting address into A
+        LDA START_ADDRESS_DANGER_PLATFORM,x       
+        BEQ goto_color_danger_platform
+        STA SCREEN_POS_LO        
+      
+        INX
+
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_DANGER_PLATFORM,x    
+        STA SCREEN_POS_HI        
+       
+        INX
+        LDA #$66
+        jsr draw_platform
+        
+        JMP print_danger_platform
+
+goto_color_danger_platform:
+        ldx #$00
+
+color_danger_platform:
+        ; Load the starting address into A
+        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x 
+        BEQ infinite_loop      
+        STA COLOR_POS_LO        
+
+        INX     
+        
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x   
+        STA COLOR_POS_HI      
+
+        LDA #$00
+        jsr color_platform
+
+        INX
+
+        jmp color_danger_platform
+
+
+draw_platform:
+        STA (SCREEN_POS_LO),y    
+        rts
+
+color_platform:
+        STA (COLOR_POS_LO),y    
+        rts
+
+
 infinite_loop:
-        jmp infinite_loop
+        JMP infinite_loop      
