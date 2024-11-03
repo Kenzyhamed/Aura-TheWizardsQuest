@@ -11,20 +11,23 @@ CLRCHN = $ffcc
 HOME = $ffba
 GETIN = $FFE4      ; Address for GETIN
 
+; Define boundaries for screen position high byte
+SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
+SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
+
 SCREEN_MEM = $1E00
 COLOR_MEM = $9600
 NEXT_COLOR_MEM = $96FF
-SCREEN_START_HI = $1E       ; High byte of screen memory start address ($1E00)
-
-COUNT_FOR_LOOP = $0003
-COLOR_FOR_LOOP = $0004
-COUNTER = $0005
-USE_NEXT_COLOR_MEMORY =  $0006
 
 CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
 DANGER_PLATFORM_LOCATION = $1C10
 VIC_CHAR_REG = $9005
+
+COUNT_FOR_LOOP = $0003
+COLOR_FOR_LOOP = $0004
+COUNTER = $0005
+USE_NEXT_COLOR_MEMORY =  $0006
 
 XPOS = $FB               ; Memory location to track X position 
 
@@ -58,7 +61,7 @@ countValues:
         HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
 
 CHAR:
-        org CHAR_LOCATION
+        ;org CHAR_LOCATION
         dc.b %00111100
         dc.b %01000010
         dc.b %10100101
@@ -69,7 +72,7 @@ CHAR:
         dc.b %00111100
 
 NORMAL_PLATFORM:
-        org NORAML_PLATFORM_LOCATION
+        ;org NORAML_PLATFORM_LOCATION
         dc.b %11111111
         dc.b %11111111
         dc.b %11111111
@@ -80,7 +83,7 @@ NORMAL_PLATFORM:
         dc.b %00000000
 
 DANGER_PLATFORM:
-        org DANGER_PLATFORM_LOCATION
+        ;org DANGER_PLATFORM_LOCATION
         dc.b %00010000
         dc.b %00111000
         dc.b %00111000
@@ -107,11 +110,11 @@ START_ADDRESS_COLOR_DANGER_PLATFORM:
     .byte $40, $97, $41, $97, $42, $97  ; Low byte ($20), High byte ($1E)
 
 SPAWN_ADDRESS:
-    .byte $4C, $1F ; Low byte ($20), High byte ($1E)
+    .byte $4C, $1E ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 SPAWN_ADDRESS_COLOR:
-    .byte $4C, $97 ; Low byte ($20), High byte ($1E)
+    .byte $4C, $96 ; Low byte ($20), High byte ($1E)
 
 
 
@@ -119,10 +122,43 @@ SPAWN_ADDRESS_COLOR:
 start:
         JMP clear_screen
 
+draw_platform:
+        STA (SCREEN_POS_LO),y    
+        rts
+
+color_platform:
+        STA (COLOR_POS_LO),y    
+        rts
+         
+
 clear_screen:
         LDA #$93
         JSR CHROUT
         JSR CLRCHN
+
+copy_char_data:
+        lda CHAR,x              
+        sta CHAR_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_char_data  
+        ldx #$00
+
+copy_normal_data:
+        lda NORMAL_PLATFORM,x              
+        sta NORAML_PLATFORM_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_normal_data 
+        ldx #$00
+        
+copy_danger_data:
+        lda DANGER_PLATFORM,x              
+        sta DANGER_PLATFORM_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_danger_data
+        ldx #$00
 
 title_screen:
         LDX #0                ; Initialize index to read msg    
@@ -239,10 +275,11 @@ wait_for_input:
         JSR GETIN
 
         CMP #'A
-        BEQ START
+        BEQ start_level
         BNE wait_for_input
 
-START:
+
+start_level:
 	lda #$93
 	jsr CHROUT	 ; Clear the screen
         
@@ -331,11 +368,6 @@ draw_bottom_loop:
         ldx #$00
         ldy #$00
 
-load_char:
-        ; point VIC to use custom character set
-        lda #$FF
-        sta VIC_CHAR_REG 
-
 print_normal_platform:
         ; Load the starting address into A
         LDA START_ADDRESS_NORMAL_PLATFORM,x        
@@ -361,7 +393,7 @@ goto_color_normal_platform:
 color_normal_platform:
         ; Load the starting address into A
         LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x  
-        BEQ goto_danger_platform      
+        BEQ char_screen     
         STA COLOR_POS_LO       
         
         INX            
@@ -378,60 +410,11 @@ color_normal_platform:
         jmp color_normal_platform
 
 
-goto_danger_platform:
-        ldx #$00
-
-print_danger_platform:
-        ; Load the starting address into A
-        LDA START_ADDRESS_DANGER_PLATFORM,x       
-        BEQ goto_color_danger_platform
-        STA SCREEN_POS_LO        
-      
-        INX
-
-        ; Load the high byte of the starting address
-        LDA START_ADDRESS_DANGER_PLATFORM,x    
-        STA SCREEN_POS_HI        
-       
-        INX
-        LDA #$02
-        jsr draw_platform
-        
-        JMP print_danger_platform
-
-goto_color_danger_platform:
-        ldx #$00
-
-color_danger_platform:
-        ; Load the starting address into A
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x 
-        BEQ char_screen      
-        STA COLOR_POS_LO        
-
-        INX     
-        
-        ; Load the high byte of the starting address
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x   
-        STA COLOR_POS_HI      
-
-        LDA #$00
-        jsr color_platform
-
-        INX
-
-        jmp color_danger_platform
-
-
-draw_platform:
-        STA (SCREEN_POS_LO),y    
-        rts
-
-color_platform:
-        STA (COLOR_POS_LO),y    
-        rts
-         
-
 char_screen:
+; point VIC to use custom character set
+        LDA #$ff                  ; Load low byte (0xF5)
+        sta VIC_CHAR_REG 
+
         ldx #$00
 
         LDA SPAWN_ADDRESS_COLOR,x 
@@ -461,54 +444,89 @@ char_screen:
         jsr draw_platform        
 
 loop:
-        jsr GETIN               ; Get key input
-        cmp #$00                ; Check if no key was pressed
-        beq loop                ; If no key, continue loop
-        cmp #'J                ; Check if 'J' was pressed (move left)
+        CLC
+        jsr GETIN                    ; Get key input
+        cmp #$00                     ; Check if no key was pressed
+        beq loop                     ; If no key, continue loop
+        cmp #'J                     ; Check if 'J' was pressed (move left)
         beq moveleft
-        cmp #'L                ; Check if 'L' was pressed (move right)
+        cmp #'L                     ; Check if 'L' was pressed (move right)
         beq moveright
-        jmp loop                ; Continue the loop if no recognized key
-
-
+        jmp loop                     ; Continue the loop if no recognized key
 moveleft:
-        lda #$00
-        JSR CHROUT
-        ldx #$00
-        ; Load the starting address into A
-        LDA SPAWN_ADDRESS,x       
-        STA SCREEN_POS_LO        
-      
-        INX
+        jsr draw_left
+        jsr color_left
+        jmp loop
 
-        ; Load the high byte of the starting address
-        LDA SPAWN_ADDRESS,x    
-        STA SCREEN_POS_HI    
+draw_left:
+        CLC
+        ldy #$00
 
-        lda #$02                ; Blank space to erase current position
-        sta SCREEN_POS_LO,y            ; Erase current position
-        dex                     ; Move left (decrement X)
-        stx XPOS                ; Store updated X position in memory
-        lda #$00                ; Reload screen code for 'A'
-        sta SCREEN_POS_LO,x            ; Place character at new position
-        lda #$02                ; Set color to blue
-        sta COLOR_POS_LO,x             ; Set color at the new position
-        jmp loop                ; Go back to the main loop
+        dec SCREEN_POS_LO
+        BCS dec_screen_high_byte
+        LDA #$00
+        jsr draw_platform
+        rts
+
+color_left:
+        CLC
+        ldy #$00
+        dec COLOR_POS_LO
+        BCS dec_color_high_byte
+        LDA #$00
+        jsr color_platform
+        rts
+
+dec_screen_high_byte:
+        dec SCREEN_POS_HI
+        LDA #$00
+        jsr draw_platform
+        rts
+
+dec_color_high_byte:
+        dec COLOR_POS_HI
+        LDA #$00
+        jsr color_platform
+        rts
+
 
 moveright:
-        ldx XPOS                 ; Load current X position
-        cpx #21                 ; Check if at the rightmost position 
-        beq loop                ; If at the right edge, don't move
+        jsr draw_right
+        jsr color_right
+        jmp loop
 
-        lda #$02              ; Blank space to erase current position
-        sta SCREEN_MEM,x            ; Erase current position
-        inx                     ; Move right (increment X)
-        stx XPOS                ; Store updated X position in memory
-        lda #$01                ; Reload screen code for 'A'
-        sta SCREEN_MEM,x            ; Place character at new position
-        lda #$06                ; Set color to blue
-        sta COLOR_MEM,x             ; Set color at the new position
-        jmp loop                ; Go back to the main loop
+draw_right:
+        CLC
+        ldy #$00
+
+        inc SCREEN_POS_LO
+        BCS inc_screen_high_byte
+        LDA #$00
+        jsr draw_platform
+        rts
+
+color_right:
+        CLC
+        ldy #$00
+        inc COLOR_POS_LO
+        BCS inc_color_high_byte
+        LDA #$00
+        jsr color_platform
+        rts
+
+inc_screen_high_byte:
+        inc SCREEN_POS_HI
+        LDA #$00
+        jsr draw_platform
+        rts
+
+inc_color_high_byte:
+        inc COLOR_POS_HI
+        LDA #$00
+        jsr color_platform
+        rts
+
+
 
 
 infinite_loop:
