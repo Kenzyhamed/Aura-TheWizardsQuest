@@ -20,7 +20,7 @@ msg:
 	HEX 50 52 45 53 53 20 41 20 54 4F 20 53 54 41 52 54 0D 00
 
 CHAR:
-        org CHAR_LOCATION
+       ; org CHAR_LOCATION
         dc.b %00111100
         dc.b %01000010
         dc.b %10100101
@@ -31,7 +31,7 @@ CHAR:
         dc.b %00111100
 
 PLATFORM:
-        org PLATFORM_LOCATION
+       ; org PLATFORM_LOCATION
         dc.b %00000000
         dc.b %00000000
         dc.b %00000000
@@ -46,7 +46,28 @@ PLATFORM:
 start:
        	lda #$93
         JSR CHROUT
-        JSR CLRCHN          
+        JSR CLRCHN
+
+        ; copy CHAR data to $1c00
+        ldx #0                   
+copy_char_data:
+        lda CHAR,x              
+        sta CHAR_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_char_data       
+
+        ; copy PLATFORM data to $1c08
+        ldx #0
+
+copy_platform_data:
+        lda PLATFORM,x         
+        sta PLATFORM_LOCATION,x 
+        inx                   
+        cpx #8             
+        bne copy_platform_data  
+
+        jmp load_char                   
 
 load_char:
         ; point VIC to use custom character set
@@ -69,4 +90,4 @@ char_screen:
         STA COLOR_MEM,X
 
 loop:
-        JMP loop                  
+        JMP loop                 
