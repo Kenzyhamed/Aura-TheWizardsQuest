@@ -22,6 +22,7 @@ NEXT_COLOR_MEM = $96FF
 CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
 DANGER_PLATFORM_LOCATION = $1C10
+BLANK_SPACE_LOCATION = $1C18
 VIC_CHAR_REG = $9005
 
 COUNT_FOR_LOOP = $0003
@@ -93,28 +94,39 @@ DANGER_PLATFORM:
         dc.b %11111111
         dc.b %11111111
 
+BLANK_SPACE:
+        ;org BLANK_SPACE_LOCATION
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM:
-    .byte $62, $1F, $63, $1F, $64, $1F, $46, $1E, $47, $1E, $48, $1E  ; Low byte ($20), High byte ($1E)
+    .byte $62, $1F, $63, $1F, $64, $1F, $46, $1E, $47, $1E, $48, $1E, $ff  ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 START_ADDRESS_COLOR_NORMAL_PLATFORM:
-    .byte $62, $97, $63, $97, $64, $97, $46, $96, $47, $96, $48, $96  ; Low byte ($20), High byte ($1E)
+    .byte $62, $97, $63, $97, $64, $97, $46, $96, $47, $96, $48, $96, $ff  ; Low byte ($20), High byte ($1E)
 
 START_ADDRESS_DANGER_PLATFORM:
-    .byte $40, $1F, $41, $1F, $42, $1F  ; Low byte ($20), High byte ($1E)
+    .byte $40, $1F, $41, $1F, $42, $1F, $ff  ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 START_ADDRESS_COLOR_DANGER_PLATFORM:
-    .byte $40, $97, $41, $97, $42, $97  ; Low byte ($20), High byte ($1E)
+    .byte $40, $97, $41, $97, $42, $97, $ff  ; Low byte ($20), High byte ($1E)
 
 SPAWN_ADDRESS:
-    .byte $4C, $1E ; Low byte ($20), High byte ($1E)
+    .byte $F8, $1E ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 SPAWN_ADDRESS_COLOR:
-    .byte $4C, $96 ; Low byte ($20), High byte ($1E)
+    .byte $F8, $96 ; Low byte ($20), High byte ($1E)
 
 
 
@@ -136,6 +148,7 @@ clear_screen:
         JSR CHROUT
         JSR CLRCHN
 
+        ldx #$00
 copy_char_data:
         lda CHAR,x              
         sta CHAR_LOCATION,x     
@@ -158,6 +171,14 @@ copy_danger_data:
         inx                    
         cpx #8                  
         bne copy_danger_data
+        ldx #$00
+
+copy_blank_data:
+        lda BLANK_SPACE,x              
+        sta BLANK_SPACE_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_blank_data
         ldx #$00
 
 title_screen:
@@ -370,7 +391,8 @@ draw_bottom_loop:
 
 print_normal_platform:
         ; Load the starting address into A
-        LDA START_ADDRESS_NORMAL_PLATFORM,x        
+        LDA START_ADDRESS_NORMAL_PLATFORM,x 
+        CMP #$FF       
         BEQ goto_color_normal_platform  
         STA SCREEN_POS_LO        
 
@@ -393,7 +415,8 @@ goto_color_normal_platform:
 color_normal_platform:
         ; Load the starting address into A
         LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x  
-        BEQ char_screen     
+        CMP #$FF       
+        BEQ goto_print_danger_platform   
         STA COLOR_POS_LO       
         
         INX            
@@ -409,6 +432,51 @@ color_normal_platform:
 
         jmp color_normal_platform
 
+goto_print_danger_platform:
+        ldx #$00
+
+print_danger_platform:
+        ; Load the starting address into A
+        LDA START_ADDRESS_DANGER_PLATFORM,x 
+        CMP #$FF       
+        BEQ goto_color_danger_platform  
+        STA SCREEN_POS_LO        
+
+        INX
+
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_DANGER_PLATFORM,x    
+        STA SCREEN_POS_HI        
+
+        LDA #$02
+        jsr draw_platform
+
+        INX
+              
+        JMP print_danger_platform
+
+goto_color_danger_platform:
+        ldx #$00
+
+color_danger_platform:
+        ; Load the starting address into A
+        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x 
+        CMP #$FF 
+        BEQ char_screen     
+        STA COLOR_POS_LO       
+        
+        INX            
+        
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x    
+        STA COLOR_POS_HI      
+        
+        LDA #$02
+        jsr color_platform
+
+        INX
+
+        jmp color_danger_platform
 
 char_screen:
 ; point VIC to use custom character set
@@ -462,32 +530,61 @@ draw_left:
         CLC
         ldy #$00
 
-        dec SCREEN_POS_LO
-        BCS dec_screen_high_byte
-        LDA #$00
+    ;    dec SCREEN_POS_LO
+   ;     BNE skip_decrement_color_hi  ; If no carry, skip increment
+  ;      dec SCREEN_POS_HI             ; Increment COLOR_POS_HI if carry is set
+ ;       jmp decremented_screen_hi
+
+;decremented_screen_hi:
+        ; Load value at new position and compare with blank space
+        ;lda (SCREEN_POS_LO),y      ; Load value at new position
+       ; cmp #$03 
+     ;   beq inc_screen_hi_then_draw
+      ;  cmp #$20 
+    ;    beq inc_screen_hi_then_draw
+
+   ;     inc SCREEN_POS_LO
+  ;      inc SCREEN_POS_HI
+
+ ;       jmp loop
+
+;inc_screen_hi_then_draw:
+  ;      inc SCREEN_POS_HI
+ ;       jmp continue_drawing_left
+
+;skip_decrement_color_hi:
+        ; Load value at new position and compare with blank space
+       ; lda (SCREEN_POS_LO),y      ; Load value at new position
+      ;  cmp #$03 
+     ;   beq continue_drawing_left
+    ;    cmp #$20 
+   ;     beq continue_drawing_left
+  ;      inc SCREEN_POS_LO
+        
+ ;       jmp loop
+
+
+;continue_drawing_left:
+        ;inc SCREEN_POS_LO
+        lda #03 ; blank platform
         jsr draw_platform
-        rts
+
+        dec SCREEN_POS_LO
+        BNE no_high_increment  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+
+        ; If carry is set, increment the high byte
+        jsr dec_hi_screen_byte
+        jmp no_high_increment
 
 color_left:
         CLC
         ldy #$00
         dec COLOR_POS_LO
-        BCS dec_color_high_byte
-        LDA #$00
-        jsr color_platform
-        rts
+        BNE no_high_increment_color  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+        ; If carry is set, increment the high byte
+        jsr dec_hi_color_byte
+        jmp no_high_increment_color
 
-dec_screen_high_byte:
-        dec SCREEN_POS_HI
-        LDA #$00
-        jsr draw_platform
-        rts
-
-dec_color_high_byte:
-        dec COLOR_POS_HI
-        LDA #$00
-        jsr color_platform
-        rts
 
 
 moveright:
@@ -500,34 +597,80 @@ draw_right:
         ldy #$00
 
         inc SCREEN_POS_LO
-        BCS inc_screen_high_byte
-        LDA #$00
+        BNE skip_increment_color_hi  ; If no carry, skip increment
+        INC SCREEN_POS_HI             ; Increment COLOR_POS_HI if carry is set
+        jmp incremented_screen_hi
+
+incremented_screen_hi:
+        ; Load value at new position and compare with blank space
+        lda (SCREEN_POS_LO),y      ; Load value at new position
+        cmp #$03 
+        beq dec_screen_hi_then_draw
+        cmp #$20 
+        beq dec_screen_hi_then_draw
+
+        dec SCREEN_POS_LO
+        dec SCREEN_POS_HI
+        
+        jmp loop
+
+dec_screen_hi_then_draw:
+        dec SCREEN_POS_HI
+        jmp continue_drawing_right
+
+skip_increment_color_hi:
+        ; Load value at new position and compare with blank space
+        lda (SCREEN_POS_LO),y      ; Load value at new position
+        cmp #$03 
+        beq continue_drawing_right
+        cmp #$20 
+        beq continue_drawing_right
+        dec SCREEN_POS_LO
+        
+        jmp loop
+
+continue_drawing_right:
+        dec SCREEN_POS_LO
+        
+        lda #03
         jsr draw_platform
-        rts
+        inc SCREEN_POS_LO
+        BNE no_high_increment  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+
+        ; If carry is set, increment the high byte
+        INC SCREEN_POS_HI
+        jmp no_high_increment
 
 color_right:
         CLC
         ldy #$00
         inc COLOR_POS_LO
-        BCS inc_color_high_byte
-        LDA #$00
-        jsr color_platform
-        rts
+        BNE no_high_increment_color  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+        ; If carry is set, increment the high byte
+        INC COLOR_POS_HI
+        jmp no_high_increment_color
 
-inc_screen_high_byte:
-        inc SCREEN_POS_HI
+no_high_increment:
         LDA #$00
         jsr draw_platform
         rts
 
-inc_color_high_byte:
-        inc COLOR_POS_HI
+no_high_increment_color:        
         LDA #$00
         jsr color_platform
         rts
 
+dec_hi_screen_byte:
+        lda #$FF                    ; Set low byte to $EF if it underflowed
+        sta SCREEN_POS_LO
+        dec SCREEN_POS_HI 
+        rts
 
-
+dec_hi_color_byte:
+        ;lda #$00                    ; Set low byte to $EF if it underflowed
+        ;sta COLOR_POS_LO
+        dec COLOR_POS_HI 
+        rts
 
 infinite_loop:
         JMP infinite_loop      
