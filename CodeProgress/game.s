@@ -24,12 +24,19 @@ CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
 DANGER_PLATFORM_LOCATION = $1C10
 BLANK_SPACE_LOCATION = $1C18
+GEM_LOCATION = $1C5A
 VIC_CHAR_REG = $9005
+
+GEM_ONE_SCREEN_LOCATION = $1E30
+GEM_ONE_COLOR_LOCATION = $9630
 
 COUNT_FOR_LOOP = $0003
 COLOR_FOR_LOOP = $0004
 COUNTER = $0005
 USE_NEXT_COLOR_MEMORY =  $0006
+GEM_COUNTER = $0007
+
+GEMS_COLLECTED = $1E15
 
 
 SCREEN_POS_LO   = $00   ; Low byte of screen memory address
@@ -107,6 +114,18 @@ BLANK_SPACE:
         dc.b %00000000
         dc.b %00000000
 
+GEM:
+        ;org GEM_LOCATION
+        dc.b %00011000
+        dc.b %00011000
+        dc.b %00011000
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %00011000
+        dc.b %00011000
+        dc.b %00011000
+       
+
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM:
@@ -130,7 +149,11 @@ SPAWN_ADDRESS:
 SPAWN_ADDRESS_COLOR:
     .byte $1C, $96 ; Low byte ($20), High byte ($1E)
 
+GEM_ADDRESS:
+        .byte $21, $1E, $ff
 
+GEM_ADDRESS_COLOR:
+        .byte $5A, $96
 
 ; our program starts here
 start:
@@ -175,6 +198,14 @@ copy_blank_data:
         inx                    
         cpx #8                  
         bne copy_blank_data
+        ldx #$00
+
+copy_gem_data:
+        lda GEM,x              
+        sta GEM_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_gem_data
         ldx #$00
 
 
@@ -496,7 +527,46 @@ color_danger_platform:
         jmp color_danger_platform
 
 
+; --------------------------------------------- GEM CODE ---------------------------------------------------
+place_gems:
+	LDA #$5A
+	
+	STA GEM_ONE_SCREEN_LOCATION
+	;STA GEM_TWO_SCREEN_LOCATION
+	;STA GEM_THREE_SCREEN_LOCATION
+	
+	LDA #$07
 
+	STA GEM_ONE_COLOR_LOCATION
+	;STA GEM_TWO_COLOR_LOCATION
+	;STA GEM_THREE_COLOR_LOCATION
+
+        RTS
+
+check_gem:
+        CMP #$5A
+        BEQ collect_gem_one
+        RTS
+
+collect_gem_one:
+	;has it been collected?
+	;LDA GEM_ONE_SCREEN_LOCATION
+	;CMP #$20
+
+	;BEQ get_input
+
+	LDA #$20
+	STA GEM_ONE_SCREEN_LOCATION
+
+	JMP increment_gem_counter
+
+increment_gem_counter:
+	INC GEM_COUNTER
+	LDA GEM_COUNTER
+	
+	STA GEMS_COLLECTED
+
+	RTS
 
 ; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
 
@@ -531,11 +601,9 @@ char_screen:
         STA SCREEN_POS_HI        
 
         LDA #$00
-        jsr draw_platform   
+        jsr draw_platform
 
-
-
-
+        jsr place_gems  
 
 ; --------------------------------------------- MOVE CODE ---------------------------------------------------
 
