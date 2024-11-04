@@ -19,6 +19,7 @@ SCREEN_MEM = $1E00
 COLOR_MEM = $9600
 NEXT_COLOR_MEM = $96FF
 
+
 CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
 DANGER_PLATFORM_LOCATION = $1C10
@@ -30,13 +31,14 @@ COLOR_FOR_LOOP = $0004
 COUNTER = $0005
 USE_NEXT_COLOR_MEMORY =  $0006
 
-XPOS = $FB               ; Memory location to track X position 
-
 
 SCREEN_POS_LO   = $00   ; Low byte of screen memory address
 SCREEN_POS_HI   = $01   ; High byte of screen memory address
 COLOR_POS_LO    = $02   ; Low byte of color memory address
 COLOR_POS_HI    = $03   ; High byte of color memory address
+TEMP_SCREEN_POS_LO   = $04   ; Low byte of screen memory address
+TEMP_SCREEN_POS_HI   = $05   ; High byte of screen memory address
+
 SCREEN_START = $1E00 	; Start of screen memory in VIC-20
 SCREEN_WIDTH = 22       ; VIC-20 screen width (22 columns)
 SCREEN_HEIGHT = 23      ; VIC-20 screen height (23 rows)
@@ -108,11 +110,11 @@ BLANK_SPACE:
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM:
-    .byte $62, $1F, $63, $1F, $64, $1F, $46, $1E, $47, $1E, $48, $1E, $ff  ; Low byte ($20), High byte ($1E)
+    .byte $62, $1F, $63, $1F, $64, $1F, $46, $1E, $47, $1E, $48, $1E, $49, $1E, $85, $1E, $86, $1E, $87, $1E, $88, $1E, $8A, $1E, $8B, $1E, $8C, $1E, $8D, $1E, $8E, $1E, $ff  ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 START_ADDRESS_COLOR_NORMAL_PLATFORM:
-    .byte $62, $97, $63, $97, $64, $97, $46, $96, $47, $96, $48, $96, $ff  ; Low byte ($20), High byte ($1E)
+    .byte $62, $97, $63, $97, $64, $97, $46, $96, $47, $96, $48, $96, $49, $96, $85, $96, $86, $96, $87, $96, $88, $96, $8A, $96, $8B, $96, $8C, $96, $8D, $96, $8E, $96, $ff  ; Low byte ($20), High byte ($1E)
 
 START_ADDRESS_DANGER_PLATFORM:
     .byte $40, $1F, $41, $1F, $42, $1F, $ff  ; Low byte ($20), High byte ($1E)
@@ -122,11 +124,11 @@ START_ADDRESS_COLOR_DANGER_PLATFORM:
     .byte $40, $97, $41, $97, $42, $97, $ff  ; Low byte ($20), High byte ($1E)
 
 SPAWN_ADDRESS:
-    .byte $F8, $1E ; Low byte ($20), High byte ($1E)
+    .byte $1C, $1E ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 SPAWN_ADDRESS_COLOR:
-    .byte $F8, $96 ; Low byte ($20), High byte ($1E)
+    .byte $1C, $96 ; Low byte ($20), High byte ($1E)
 
 
 
@@ -548,6 +550,12 @@ loop:
         beq moveright
         jmp loop                     ; Continue the loop if no recognized key
 
+dec_screen_hi_byte:
+        dec SCREEN_POS_HI       
+        lda #$ff
+        sta SCREEN_POS_LO
+        jmp no_high_increment_left
+
         
 moveleft:
         jsr draw_left
@@ -563,7 +571,7 @@ draw_left:
         beq dec_hi_byte_dummy  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
 
         dec SCREEN_POS_LO
-        jmp skip_decrement_color_hi
+        jmp skip_decrement_screen_hi
 
 decremented_screen_hi:
         ;Load value at new position and compare with blank space
@@ -582,7 +590,7 @@ inc_screen_hi_then_draw:
         inc SCREEN_POS_HI
         jmp continue_drawing_left
 
-skip_decrement_color_hi:
+skip_decrement_screen_hi:
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
         cmp #$03 
@@ -604,19 +612,20 @@ continue_drawing_left:
         beq dec_screen_hi_byte  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
 
         dec SCREEN_POS_LO
-        jmp no_high_increment
+        jmp no_high_increment_left
 
 color_left:
-        CLC
-        ldy #$00
-
-        lda COLOR_POS_LO,y
-        cmp #$00            ; Check if SCREEN_POS_LO has underflowed to $FF
-        beq dec_color_hi_byte  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+        LDA #$ff                  ; Load low byte (0xF5)
+        sta VIC_CHAR_REG 
+               
+        LDA SCREEN_POS_LO
+        STA COLOR_POS_LO
         
 
-        dec COLOR_POS_LO
-        jmp no_high_increment_color
+        lda #00 ; blank platform
+        jsr color_platform
+        jmp loop
+
 
 dec_hi_byte_dummy:
         dec SCREEN_POS_HI      
@@ -634,7 +643,7 @@ draw_right:
         ldy #$00
 
         inc SCREEN_POS_LO
-        BNE skip_increment_color_hi  ; If no carry, skip increment
+        BNE skip_increment_screen_hi  ; If no carry, skip increment
         INC SCREEN_POS_HI             ; Increment COLOR_POS_HI if carry is set
         jmp incremented_screen_hi
 
@@ -655,7 +664,7 @@ dec_screen_hi_then_draw:
         dec SCREEN_POS_HI
         jmp continue_drawing_right
 
-skip_increment_color_hi:
+skip_increment_screen_hi:
         ; Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
         cmp #$03 
@@ -672,43 +681,73 @@ continue_drawing_right:
         lda #03
         jsr draw_platform
         inc SCREEN_POS_LO
-        BNE no_high_increment  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+        BNE no_high_increment_right  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
 
         ; If carry is set, increment the high byte
         INC SCREEN_POS_HI
-        jmp no_high_increment
+        lda #00
+        jsr draw_platform
+        jmp color_right
 
 color_right:
-        CLC
-        ldy #$00
-        inc COLOR_POS_LO
-        BNE no_high_increment_color  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
-        ; If carry is set, increment the high byte
-        INC COLOR_POS_HI
-        jmp no_high_increment_color
-
-no_high_increment:
-        LDA #$00
-        jsr draw_platform
-        rts
-
-no_high_increment_color:        
-        LDA #$00
+        LDA #$ff                  ; Load low byte (0xF5)
+        sta VIC_CHAR_REG 
+               
+        LDA SCREEN_POS_LO
+        STA COLOR_POS_LO
+        
+        lda #00 ; blank platform
         jsr color_platform
-        rts
+        jmp loop
 
-dec_screen_hi_byte:
-        dec SCREEN_POS_HI       
-        lda #$ff
-        sta SCREEN_POS_LO
-        jmp no_high_increment
+no_high_increment_right:
+        ;LDA #$00
+        ;jsr draw_platform
+        ;jmp color_right
+        jmp check_under
 
-dec_color_hi_byte:
-        dec COLOR_POS_HI       
-        lda #$ff
-        sta COLOR_POS_LO
-        jmp no_high_increment_color
-    
+no_high_increment_left:
+        jmp check_under
+
+check_under:
+        LDA #$ff                  ; Load low byte (0xF5)
+        sta VIC_CHAR_REG 
+        
+        LDA SCREEN_POS_LO         ; Load the low byte into the accumulator
+        STA TEMP_SCREEN_POS_LO
+
+        LDA SCREEN_POS_LO         ; Load the low byte into the accumulator
+        CLC                         ; Clear carry for addition
+        ADC #$16                   ; Add 0x16 (22 in decimal) to move one block down
+        STA SCREEN_POS_LO          ; Update SCREEN_POS_LO to the new position
+
+        ldy #00
+        ; Check if moving down is valid
+        LDA (SCREEN_POS_LO),y ; Load the value at the new position
+        CMP #02                     ; Compare with 01
+        BEQ cannot_move_down       ; If equal, can't move down
+        CMP #01                    ; Compare with 01
+        BEQ cannot_move_down       ; If equal, can't move down               
+
+        inx
+
+        ; Draw the character at the new position
+        LDA #00   ; Load the character code to be drawn
+        jsr draw_platform           ; Draw the character at the new position
+        jmp check_under
+
+
+cannot_move_down:
+        SEC                  ; Set the carry to prepare for subtraction
+        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
+        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
+        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+
+        LDA #00                    ; Load the character code for the blank platform
+        jsr draw_platform          ; Draw the blank character at the reverted position
+       
+        jmp color_left
+
 
 ; ---------------------------- DRAW AND COLOR CODE BEING USED AT A FEW PLACES ----------------------------
 
@@ -719,3 +758,4 @@ draw_platform:
 color_platform:
         STA (COLOR_POS_LO),y    
         rts
+
