@@ -110,11 +110,11 @@ BLANK_SPACE:
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM:
-    .byte $62, $1F, $63, $1F, $64, $1F, $46, $1E, $47, $1E, $48, $1E, $49, $1E, $85, $1E, $86, $1E, $87, $1E, $88, $1E, $8A, $1E, $8B, $1E, $8C, $1E, $8D, $1E, $8E, $1E, $ff  ; Low byte ($20), High byte ($1E)
+    .byte $62, $1F, $63, $1F, $64, $1F, $65, $1F, $46, $1E, $47, $1E, $48, $1E, $49, $1E, $85, $1E, $86, $1E, $87, $1E, $88, $1E, $8A, $1E, $8B, $1E, $8C, $1E, $8D, $1E, $8E, $1E, $8F, $1E, $90, $1E, $91, $1E, $92, $1E, $00, $1F, $01, $1F, $02, $1F, $03, $1F, $04, $1F, $05, $1F, $ff  ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 START_ADDRESS_COLOR_NORMAL_PLATFORM:
-    .byte $62, $97, $63, $97, $64, $97, $46, $96, $47, $96, $48, $96, $49, $96, $85, $96, $86, $96, $87, $96, $88, $96, $8A, $96, $8B, $96, $8C, $96, $8D, $96, $8E, $96, $ff  ; Low byte ($20), High byte ($1E)
+    .byte $62, $97, $63, $97, $64, $97, $65, $97, $46, $96, $47, $96, $48, $96, $49, $96, $85, $96, $86, $96, $87, $96, $88, $96, $8A, $96, $8B, $96, $8C, $96, $8D, $96, $8E, $96, $8F, $96, $90, $96, $91, $96, $92, $96, $00, $97, $01, $97, $02, $97, $03, $97, $04, $97, $05, $97, $ff  ; Low byte ($20), High byte ($1E)
 
 START_ADDRESS_DANGER_PLATFORM:
     .byte $40, $1F, $41, $1F, $42, $1F, $ff  ; Low byte ($20), High byte ($1E)
@@ -409,7 +409,7 @@ draw_bottom_loop:
 print_normal_platform:
         ; Load the starting address into A
         LDA START_ADDRESS_NORMAL_PLATFORM,x 
-        CMP #$FF       
+        CMP #$FF    
         BEQ goto_color_normal_platform  
         STA SCREEN_POS_LO        
 
@@ -556,6 +556,10 @@ dec_screen_hi_byte:
         sta SCREEN_POS_LO
         jmp no_high_increment_left
 
+moveright:
+        jsr draw_right
+        jsr color_right
+        jmp loop
         
 moveleft:
         jsr draw_left
@@ -621,6 +625,12 @@ color_left:
         LDA SCREEN_POS_LO
         STA COLOR_POS_LO
         
+        ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
+        LDA SCREEN_POS_HI         ; Load the high byte of the screen position
+        CMP #$1E                   ; Compare with 1E
+        BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
+        CMP #$1F                   ; Compare with 1F
+        BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
 
         lda #00 ; blank platform
         jsr color_platform
@@ -633,10 +643,7 @@ dec_hi_byte_dummy:
         sta SCREEN_POS_LO 
         jmp decremented_screen_hi
 
-moveright:
-        jsr draw_right
-        jsr color_right
-        jmp loop
+
 
 draw_right:
         CLC
@@ -690,20 +697,37 @@ continue_drawing_right:
         jmp color_right
 
 color_right:
-        LDA #$ff                  ; Load low byte (0xF5)
-        sta VIC_CHAR_REG 
-               
-        LDA SCREEN_POS_LO
-        STA COLOR_POS_LO
-        
+        LDA #$FF                  ; Load low byte (e.g., character code for a specific color)
+        STA VIC_CHAR_REG          ; Store in the VIC character register
+
+        ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
+        LDA SCREEN_POS_HI         ; Load the high byte of the screen position
+        CMP #$1E                   ; Compare with 1E
+        BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
+        CMP #$1F                   ; Compare with 1F
+        BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
+
+continue_color:
+        LDA SCREEN_POS_LO         ; Load the low byte of the screen position
+        STA COLOR_POS_LO          ; Store the low byte in COLOR_POS_LO
+
         lda #00 ; blank platform
         jsr color_platform
         jmp loop
 
+
+set_color_hi_96:
+        LDA #$96          ; Store it in COLOR_POS_HI
+        STA COLOR_POS_HI                   ; Compare with 1E
+        jmp continue_color                        ; Return from the subroutine
+
+set_color_hi_97:
+        LDA #$97          ; Store it in COLOR_POS_HI
+        STA COLOR_POS_HI                   ; Compare with 1E
+        jmp continue_color                        ; Return from the subroutine
+                     
+
 no_high_increment_right:
-        ;LDA #$00
-        ;jsr draw_platform
-        ;jmp color_right
         jmp check_under
 
 no_high_increment_left:
@@ -721,13 +745,21 @@ check_under:
         ADC #$16                   ; Add 0x16 (22 in decimal) to move one block down
         STA SCREEN_POS_LO          ; Update SCREEN_POS_LO to the new position
 
+        BCC check_under_no_carry     ; Branch if there is no carry (no high byte increment)
+        inc SCREEN_POS_HI
+        jmp check_under_no_carry
+
+check_under_no_carry:
+
         ldy #00
         ; Check if moving down is valid
         LDA (SCREEN_POS_LO),y ; Load the value at the new position
         CMP #02                     ; Compare with 01
         BEQ cannot_move_down       ; If equal, can't move down
         CMP #01                    ; Compare with 01
-        BEQ cannot_move_down       ; If equal, can't move down               
+        BEQ cannot_move_down       ; If equal, can't move down     
+        CMP #$DF                    ; Compare with 01
+        BEQ cannot_move_down       ; If equal, can't move down           
 
         inx
 
