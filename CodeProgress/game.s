@@ -202,6 +202,20 @@ START_ADDRESS_DANGER_PLATFORM:
 START_ADDRESS_COLOR_DANGER_PLATFORM:
     .byte $3D, $97, $3E, $97, $45, $97, $46, $97, $47, $97, $8B, $96, $62, $97, $ff  ; Low byte ($20), High byte ($1E)
 
+START_ADDRESS_GEM:
+    .byte $30, $1E, $D0, $1F, $E0, $1F, $ff 
+
+; Define the starting address in an array
+START_ADDRESS_COLOR_GEM:
+    .byte $30, $96, $D0, $97, $E0, $97, $ff 
+
+START_ADDRESS_GEM:
+    .byte $30, $1E, $D0, $1F, $E0, $1F, $ff 
+
+; Define the starting address in an array
+START_ADDRESS_COLOR_GEM:
+    .byte $30, $96, $D0, $97, $E0, $97, $ff 
+
 SPAWN_ADDRESS:
     .byte $31, $1E ; Low byte ($20), High byte ($1E)
 
@@ -759,6 +773,12 @@ char_screen:
         LDA #$00
         jsr draw_platform
 
+
+      	LDA #$05
+	sta GEM_COUNTER
+        lda GEM_COUNTER
+	STA GEMS_COLLECTED
+
         LDX #$00
         jmp loop
 
@@ -975,7 +995,37 @@ continue_drawing_right:
         INC SCREEN_POS_HI
         lda #00
         jsr draw_platform
-        jmp color_char
+        jmp color_right
+
+set_color_hi_96:
+        LDA #$96          ; Store it in COLOR_POS_HI
+        STA COLOR_POS_HI                   ; Compare with 1E
+        jmp continue_color                        ; Return from the subroutine
+
+set_color_hi_97:
+        LDA #$97          ; Store it in COLOR_POS_HI
+        STA COLOR_POS_HI                   ; Compare with 1E
+        jmp continue_color                        ; Return from the subroutine
+
+color_right:
+        LDA #$FF                  ; Load low byte (e.g., character code for a specific color)
+        STA VIC_CHAR_REG          ; Store in the VIC character register
+
+        ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
+        LDA SCREEN_POS_HI         ; Load the high byte of the screen position
+        CMP #$1E                   ; Compare with 1E
+        BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
+        CMP #$1F                   ; Compare with 1F
+        BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
+        JMP continue_color
+
+continue_color:
+        LDA SCREEN_POS_LO         ; Load the low byte of the screen position
+        STA COLOR_POS_LO          ; Store the low byte in COLOR_POS_LO
+
+        lda #00 ; blank platform
+        jsr color_platform
+        jmp loop
 
 no_high_increment_right:
         jmp check_under
