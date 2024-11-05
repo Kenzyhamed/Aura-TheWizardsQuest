@@ -973,7 +973,7 @@ moveright:
         
 moveleft:
         jsr draw_left
-        jsr color_char
+        jsr color_char ; TODO: i think we can remove this
         jmp loop
 
 draw_left:
@@ -1052,9 +1052,6 @@ continue_drawing_left:
         jmp no_high_increment_left
 
 color_char:
-        LDA #$ff                  ; Load low byte (0xF5)
-        sta VIC_CHAR_REG 
-               
         LDA SCREEN_POS_LO
         STA COLOR_POS_LO
         
