@@ -18,6 +18,7 @@ SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
 SCREEN_MEM = $1E00
 COLOR_MEM = $9600
 NEXT_COLOR_MEM = $96FF
+BACKGROUND_COLOR_ADDRESS = $900F    ; Background color address    
 
 
 CHAR_LOCATION = $1C00
@@ -522,7 +523,7 @@ draw_top_border:
 
     	lda #$DF	
     	sta SCREEN_START,y    ; Store at the location
-	lda #$00    	      ; Black color for the memory address
+	lda #$04    	      ; Black color for the memory address
 	sta COLOR_START,y
     	iny                   ; Increment Y to move to the next screen position
     	dex                   ; Decrement X (count down the number of characters)
@@ -546,7 +547,7 @@ draw_side_borders:
     	; Draw the left border at the start of the row
 	ldy #0
 	sta (SCREEN_POS_LO),y   ; Store border character at the leftmost column
-        lda #$00                ; Set color to black
+        lda #$04                ; Set color to black
         sta (COLOR_POS_LO),y    ; Store color at the 
 
         lda #$DF                ; Character to represent the side border
@@ -554,7 +555,7 @@ draw_side_borders:
 	; Draw the right border, offset by 21 visible columns 
         ldy #SCREEN_WIDTH-1     ; Set Y to 21 which is the last right column
         sta (SCREEN_POS_LO),y   ; Store border character 
-        lda #$00                ; Set color to black
+        lda #$04                ; Set color to black
         sta (COLOR_POS_LO),y    ; Store color 
 
     	; Increment the screen position by SCREEN_WIDTH so we can go to the next row
@@ -587,7 +588,7 @@ draw_bottom_border:
 draw_bottom_loop:
 	lda #$DF
         sta (SCREEN_POS_LO),y   ; Store the border character in each column
-        lda #$00                ; Set color to black
+        lda #$04                ; Set color to black
         sta (COLOR_POS_LO),y    ; Store color in the same column
 
         iny                     ; Increment Y to move to the next column
