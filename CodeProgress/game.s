@@ -30,6 +30,9 @@ ONE_LOCATION = $1C30
 TWO_LOCATION = $1C38
 THREE_LOCATION = $1C40
 DEAD_CHAR_LOCATION = $1C48
+DOOR_LOCATION = $1C50
+DOOR_HANDLE_LOCATION = $1C58
+
 
 VIC_CHAR_REG = $9005
 
@@ -184,7 +187,27 @@ DEAD_CHAR:
         dc.b %00100100
         dc.b %01000010
         dc.b %10000001
-       
+
+DOOR:
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+
+DOOR_HANDLE:
+        dc.b %10011111
+        dc.b %10011111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+        dc.b %11111111
+
 
 
 ; Define the starting address in an array
@@ -221,6 +244,18 @@ GEM_ADDRESS:
 
 GEM_ADDRESS_COLOR:
         .byte $33, $96, $D0, $97, $E0, $97, $ff
+
+DOOR_ADDRESS:
+        .byte $CC, $1F, $ff
+
+DOOR_COLOR_ADDRESS:
+        .byte $CC, $97, $ff
+
+DOOR_BOTTOM_ADDRESS:
+        .byte $E2, $1F, $ff
+
+DOOR_BOTTOM_COLOR_ADDRESS:
+        .byte $E2, $97, $ff
 
 ; our program starts here
 start:
@@ -313,6 +348,22 @@ copy_dead_char_data:
         inx                    
         cpx #8
         bne copy_dead_char_data
+        ldx #$00
+
+copy_door_data:
+        lda DOOR,x              
+        sta DOOR_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_door_data
+        ldx #$00
+
+copy_door_handle_data:
+        lda DOOR_HANDLE,x              
+        sta DOOR_HANDLE_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_door_handle_data
         ldx #$00
 
 ; -----------------------------------  TITLE SCREEN CODE -----------------------------------
@@ -661,7 +712,7 @@ color_gem:
         ; Load the starting address into A
         LDA GEM_ADDRESS_COLOR,x 
         CMP #$FF 
-        BEQ char_screen     
+        BEQ goto_print_door_top   
         STA COLOR_POS_LO       
         
         INX            
@@ -677,6 +728,98 @@ color_gem:
 
         jmp color_gem
 
+
+goto_print_door_top:
+        ldx #$00
+
+print_door_top:
+        ; Load the starting address into A
+        LDA DOOR_ADDRESS,x 
+        CMP #$FF       
+        BEQ goto_color_door_top
+        STA SCREEN_POS_LO        
+
+        INX
+
+        ; Load the high byte of the starting address
+        LDA DOOR_ADDRESS,x    
+        STA SCREEN_POS_HI        
+
+        LDA #$0A
+        jsr draw_platform
+
+        INX
+              
+        JMP print_door_top
+
+goto_color_door_top:
+        ldx #$00
+
+color_door_top:
+        ; Load the starting address into A
+        LDA DOOR_COLOR_ADDRESS,x 
+        CMP #$FF 
+        BEQ goto_print_door_bottom     
+        STA COLOR_POS_LO       
+        
+        INX            
+        
+        ; Load the high byte of the starting address
+        LDA DOOR_COLOR_ADDRESS,x    
+        STA COLOR_POS_HI      
+        
+        LDA #$05
+        jsr color_platform
+
+        INX
+
+        jmp color_door_top
+
+goto_print_door_bottom:
+        ldx #$00
+
+print_door_bottom:
+        ; Load the starting address into A
+        LDA DOOR_BOTTOM_ADDRESS,x 
+        CMP #$FF       
+        BEQ goto_color_door_bottom
+        STA SCREEN_POS_LO        
+
+        INX
+
+        ; Load the high byte of the starting address
+        LDA DOOR_BOTTOM_ADDRESS,x    
+        STA SCREEN_POS_HI        
+
+        LDA #$0B
+        jsr draw_platform
+
+        INX
+              
+        JMP print_door_bottom
+
+goto_color_door_bottom:
+        ldx #$00
+
+color_door_bottom:
+        ; Load the starting address into A
+        LDA DOOR_BOTTOM_COLOR_ADDRESS,x 
+        CMP #$FF 
+        BEQ char_screen     
+        STA COLOR_POS_LO       
+        
+        INX            
+        
+        ; Load the high byte of the starting address
+        LDA DOOR_BOTTOM_COLOR_ADDRESS,x    
+        STA COLOR_POS_HI      
+        
+        LDA #$05
+        jsr color_platform
+
+        INX
+
+        jmp color_door_bottom
 
 ; --------------------------------------------- GEM CODE ---------------------------------------------------
 
@@ -725,7 +868,8 @@ increment_gem_counter_right:
 	JMP continue_drawing_right
         
 increment_gem_counter_hi_right:
-	INC GEM_COUNTER
+        ; TODO: instead of using this counter, we should load the value from GEMS_COLLECTED and increment that
+	INC GEM_COUNTER 
 	LDA GEM_COUNTER
 	
 	STA GEMS_COLLECTED
