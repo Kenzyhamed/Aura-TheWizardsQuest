@@ -79,15 +79,14 @@ countValues:
 
 CHAR:
         ;org CHAR_LOCATION
-        dc.b %00111100
-        dc.b %01000010
-        dc.b %10100101
-        dc.b %10000001
-        dc.b %10100101
-        dc.b %10011001
-        dc.b %01000010
-        dc.b %00111100
-
+        dc.b %00011100
+        dc.b %00011010
+        dc.b %00111000
+        dc.b %00111000
+        dc.b %01111100
+        dc.b %01111100
+        dc.b %01111110
+        dc.b %11111111
 NORMAL_PLATFORM:
         ;org NORAML_PLATFORM_LOCATION
         dc.b %11111111
@@ -123,15 +122,14 @@ BLANK_SPACE:
 
 GEM:
         ;org GEM_LOCATION
-        dc.b %00011000
-        dc.b %00011000
-        dc.b %00011000
-        dc.b %11111111
-        dc.b %11111111
-        dc.b %00011000
-        dc.b %00011000
-        dc.b %00011000
-
+        dc.b %00001000
+        dc.b %00011100
+        dc.b %00111110
+        dc.b %01111111
+        dc.b %00111110
+        dc.b %00011100
+        dc.b %00001000
+        dc.b %00000000
 
 ZERO:
         ;org GEM_LOCATION
@@ -629,7 +627,7 @@ color_normal_platform:
         LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x    
         STA COLOR_POS_HI      
         
-        LDA #$02
+        LDA #$06
         jsr color_platform
 
         INX
