@@ -24,11 +24,22 @@ CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
 DANGER_PLATFORM_LOCATION = $1C10
 BLANK_SPACE_LOCATION = $1C18
-GEM_LOCATION = $1C5A
+GEM_LOCATION = $1C20
+ZERO_LOCATION = $1C28
+ONE_LOCATION = $1C30
+TWO_LOCATION = $1C38
+THREE_LOCATION = $1C40
+
 VIC_CHAR_REG = $9005
 
 GEM_ONE_SCREEN_LOCATION = $1E30
 GEM_ONE_COLOR_LOCATION = $9630
+
+GEM_TWO_SCREEN_LOCATION = $1FD0
+GEM_TWO_COLOR_LOCATION = $97D0
+
+GEM_THREE_SCREEN_LOCATION = $1FE0
+GEM_THREE_COLOR_LOCATION = $97E0
 
 COUNT_FOR_LOOP = $0003
 COLOR_FOR_LOOP = $0004
@@ -124,6 +135,51 @@ GEM:
         dc.b %00011000
         dc.b %00011000
         dc.b %00011000
+
+
+ZERO:
+        ;org GEM_LOCATION
+        dc.b %00000000
+        dc.b %01111110
+        dc.b %01000010
+        dc.b %01000010
+        dc.b %01000010
+        dc.b %01000010
+        dc.b %01111110
+        dc.b %00000000
+
+ONE:
+        ;org GEM_LOCATION
+        dc.b %00000000
+        dc.b %00111000
+        dc.b %01011000
+        dc.b %00011000
+        dc.b %00011000
+        dc.b %00011000
+        dc.b %01111110
+        dc.b %00000000
+
+TWO:
+        ;org GEM_LOCATION
+        dc.b %00000000
+        dc.b %01111100
+        dc.b %01000010
+        dc.b %00000100
+        dc.b %00001000
+        dc.b %00010000
+        dc.b %01111110
+        dc.b %00000000
+
+THREE:
+        ;org GEM_LOCATION
+        dc.b %00000000
+        dc.b %01111100
+        dc.b %01000010
+        dc.b %00001100
+        dc.b %00001100
+        dc.b %01000010
+        dc.b %01111100
+        dc.b %00000000
        
 
 
@@ -206,6 +262,38 @@ copy_gem_data:
         inx                    
         cpx #8
         bne copy_gem_data
+        ldx #$00
+
+copy_zero_data:
+        lda ZERO,x              
+        sta ZERO_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_zero_data
+        ldx #$00
+
+copy_one_data:
+        lda ONE,x              
+        sta ONE_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_one_data
+        ldx #$00
+
+copy_two_data:
+        lda TWO,x              
+        sta TWO_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_two_data
+        ldx #$00
+
+copy_three_data:
+        lda THREE,x              
+        sta THREE_LOCATION,x     
+        inx                    
+        cpx #8
+        bne copy_three_data
         ldx #$00
 
 
@@ -529,44 +617,76 @@ color_danger_platform:
 
 ; --------------------------------------------- GEM CODE ---------------------------------------------------
 place_gems:
-	LDA #$5A
+	LDA #$04
 	
 	STA GEM_ONE_SCREEN_LOCATION
-	;STA GEM_TWO_SCREEN_LOCATION
-	;STA GEM_THREE_SCREEN_LOCATION
+	STA GEM_TWO_SCREEN_LOCATION
+	STA GEM_THREE_SCREEN_LOCATION
 	
 	LDA #$07
 
 	STA GEM_ONE_COLOR_LOCATION
-	;STA GEM_TWO_COLOR_LOCATION
-	;STA GEM_THREE_COLOR_LOCATION
+	STA GEM_TWO_COLOR_LOCATION
+	STA GEM_THREE_COLOR_LOCATION
+
+	LDA #$05
+	sta GEM_COUNTER
+        lda GEM_COUNTER
+	STA GEMS_COLLECTED
 
         RTS
 
-check_gem:
-        CMP #$5A
-        BEQ collect_gem_one
+check_gem_left:
+        CMP #$04
+        BEQ increment_gem_counter_left
         RTS
 
-collect_gem_one:
-	;has it been collected?
-	;LDA GEM_ONE_SCREEN_LOCATION
-	;CMP #$20
+check_gem_hi_increment_left:
+        CMP #$04
+        BEQ increment_gem_counter_hi_left
+        RTS
 
-	;BEQ get_input
-
-	LDA #$20
-	STA GEM_ONE_SCREEN_LOCATION
-
-	JMP increment_gem_counter
-
-increment_gem_counter:
+increment_gem_counter_left:
 	INC GEM_COUNTER
 	LDA GEM_COUNTER
 	
 	STA GEMS_COLLECTED
 
-	RTS
+	JMP continue_drawing_left
+        
+increment_gem_counter_hi_left:
+	INC GEM_COUNTER
+	LDA GEM_COUNTER
+	
+	STA GEMS_COLLECTED
+
+	JMP inc_screen_hi_then_draw
+
+check_gem_right:
+        CMP #$04
+        BEQ increment_gem_counter_right
+        RTS
+
+check_gem_hi_increment_right:
+        CMP #$04
+        BEQ increment_gem_counter_hi_right
+        RTS
+
+increment_gem_counter_right:
+	INC GEM_COUNTER
+	LDA GEM_COUNTER
+	
+	STA GEMS_COLLECTED
+
+	JMP continue_drawing_right
+        
+increment_gem_counter_hi_right:
+	INC GEM_COUNTER
+	LDA GEM_COUNTER
+	
+	STA GEMS_COLLECTED
+
+	JMP dec_screen_hi_then_draw
 
 ; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
 
@@ -648,10 +768,14 @@ draw_left:
 decremented_screen_hi:
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
+        
+        JSR check_gem_hi_increment_left
         cmp #$03 
         beq inc_screen_hi_then_draw
         cmp #$20 
         beq inc_screen_hi_then_draw
+
+        
 
         inc SCREEN_POS_LO
         inc SCREEN_POS_HI
@@ -665,6 +789,8 @@ inc_screen_hi_then_draw:
 skip_decrement_screen_hi:
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
+        JSR check_gem_left
+       ; beq continue_drawing_left
         cmp #$03 
         beq continue_drawing_left
         cmp #$20 
@@ -725,6 +851,7 @@ draw_right:
 incremented_screen_hi:
         ; Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
+        JSR check_gem_right
         cmp #$03 
         beq dec_screen_hi_then_draw
         cmp #$20 
@@ -742,6 +869,7 @@ dec_screen_hi_then_draw:
 skip_increment_screen_hi:
         ; Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
+        JSR check_gem_right
         cmp #$03 
         beq continue_drawing_right
         cmp #$20 
@@ -764,6 +892,16 @@ continue_drawing_right:
         jsr draw_platform
         jmp color_right
 
+set_color_hi_96:
+        LDA #$96          ; Store it in COLOR_POS_HI
+        STA COLOR_POS_HI                   ; Compare with 1E
+        jmp continue_color                        ; Return from the subroutine
+
+set_color_hi_97:
+        LDA #$97          ; Store it in COLOR_POS_HI
+        STA COLOR_POS_HI                   ; Compare with 1E
+        jmp continue_color                        ; Return from the subroutine
+
 color_right:
         LDA #$FF                  ; Load low byte (e.g., character code for a specific color)
         STA VIC_CHAR_REG          ; Store in the VIC character register
@@ -774,6 +912,7 @@ color_right:
         BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
         CMP #$1F                   ; Compare with 1F
         BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
+        JMP continue_color
 
 continue_color:
         LDA SCREEN_POS_LO         ; Load the low byte of the screen position
@@ -782,18 +921,6 @@ continue_color:
         lda #00 ; blank platform
         jsr color_platform
         jmp loop
-
-
-set_color_hi_96:
-        LDA #$96          ; Store it in COLOR_POS_HI
-        STA COLOR_POS_HI                   ; Compare with 1E
-        jmp continue_color                        ; Return from the subroutine
-
-set_color_hi_97:
-        LDA #$97          ; Store it in COLOR_POS_HI
-        STA COLOR_POS_HI                   ; Compare with 1E
-        jmp continue_color                        ; Return from the subroutine
-                     
 
 no_high_increment_right:
         jmp check_under
