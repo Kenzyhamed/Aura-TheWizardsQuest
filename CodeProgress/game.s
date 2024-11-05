@@ -919,6 +919,24 @@ char_screen:
         LDX #$00
         jmp loop
 
+; --------------------------------------------- DOOR TO NEXT LEVEL CODE ---------------------------------------------------
+return:
+    RTS                 ; Early return if A is not zero
+
+load_new_level:
+        ; TODO: replace this with the code to load the next level. this is for proof of concept.
+        JMP start_level
+
+can_go_to_next_level:       
+        cmp #$0B 
+        BNE return
+        
+        LDA GEMS_COLLECTED
+        
+        ; have all 3 gems been collected?
+        CMP #$08
+        BEQ load_new_level
+        RTS
 ; --------------------------------------------- MOVE CODE ---------------------------------------------------
 
 loop:
@@ -964,8 +982,8 @@ dec_hi_byte_dummy:
 decremented_screen_hi:
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
-        
-        JSR check_gem_hi_increment_left
+        JSR check_gem_hi_increment_left ; check if we have encountered a gem
+        JSR can_go_to_next_level ; check if we have encountered a door
         cmp #$03 
         beq inc_screen_hi_then_draw
         cmp #$20 
@@ -977,7 +995,7 @@ decremented_screen_hi:
         inc SCREEN_POS_HI
 
         jmp loop
-
+        
 inc_screen_hi_then_draw:
         inc SCREEN_POS_HI
         jmp continue_drawing_left
@@ -989,7 +1007,8 @@ inc_screen_hi_then_die:
 skip_decrement_screen_hi:
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
-
+        
+        JSR can_go_to_next_level ; check if we have encountered a door
         JSR check_gem_left
         cmp #$03 
         beq continue_drawing_left
@@ -1005,7 +1024,7 @@ goto_start_level:
         ldy #$00
         jsr DelayLoop
         jmp start_level
-
+        
 continue_drawing_left:
         inc SCREEN_POS_LO
         lda #03 ; blank platform
@@ -1057,6 +1076,24 @@ char_died_horizontal:
         ldy #01
         jmp color_char
 
+incremented_screen_hi:
+        ; Load value at new position and compare with blank space
+        lda (SCREEN_POS_LO),y      ; Load value at new position
+        JSR check_gem_right
+        JSR can_go_to_next_level
+
+        cmp #$03 
+        beq dec_screen_hi_then_draw
+        cmp #$20 
+        beq dec_screen_hi_then_draw
+        cmp #$02 
+        beq dec_screen_hi_then_die
+
+        dec SCREEN_POS_LO
+        dec SCREEN_POS_HI
+        
+        jmp loop
+        
 dec_screen_hi_byte:
         dec SCREEN_POS_HI       
         lda #$ff
@@ -1082,22 +1119,6 @@ draw_right:
         INC SCREEN_POS_HI             ; Increment COLOR_POS_HI if carry is set
         jmp incremented_screen_hi
 
-incremented_screen_hi:
-        ; Load value at new position and compare with blank space
-        lda (SCREEN_POS_LO),y      ; Load value at new position
-        JSR check_gem_right
-        cmp #$03 
-        beq dec_screen_hi_then_draw
-        cmp #$20 
-        beq dec_screen_hi_then_draw
-        cmp #$02 
-        beq dec_screen_hi_then_die
-
-        dec SCREEN_POS_LO
-        dec SCREEN_POS_HI
-        
-        jmp loop
-
 dec_screen_hi_then_draw:
         dec SCREEN_POS_HI
         jmp continue_drawing_right
@@ -1109,7 +1130,10 @@ dec_screen_hi_then_die:
 skip_increment_screen_hi:
         ; Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
+
         JSR check_gem_right
+        JSR can_go_to_next_level
+        
         cmp #$03 
         beq continue_drawing_right
         cmp #$20 
