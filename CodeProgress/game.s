@@ -266,7 +266,6 @@ clear_screen:
         JSR CHROUT
         JSR CLRCHN
 
-
 ; ----------------------------------- COPY CHAR DATA CODE -----------------------------------
 
         ldx #$00
@@ -484,6 +483,7 @@ use_next_color_memory:
 
 wait_for_input:
         JSR GETIN
+        JSR title_sound
 
         CMP #'A
         BEQ start_level
@@ -494,6 +494,8 @@ wait_for_input:
 ; ----------------------------------- SCREEN CLEAR AFTER INPUT ON TITLE SCREEN -----------------------------------
 
 start_level:
+        JSR sound_off
+
 	lda #$93
 	jsr CHROUT	 ; Clear the screen
         LDA #$ff                  ; Load low byte (0xF5)
@@ -844,6 +846,9 @@ increment_gem_counter_left:
 	
 	STA GEMS_COLLECTED
 
+        ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
+        ;JSR sound_collect_gem 
+
 	JMP continue_drawing_left
         
 increment_gem_counter_hi_left:
@@ -851,6 +856,7 @@ increment_gem_counter_hi_left:
 	LDA GEM_COUNTER
 	
 	STA GEMS_COLLECTED
+        ;JSR sound_collect_gem
 
 	JMP inc_screen_hi_then_draw
 
@@ -869,6 +875,7 @@ increment_gem_counter_right:
 	LDA GEM_COUNTER
 	
 	STA GEMS_COLLECTED
+       ; JSR sound_collect_gem
 
 	JMP continue_drawing_right
         
@@ -878,6 +885,7 @@ increment_gem_counter_hi_right:
 	LDA GEM_COUNTER
 	
 	STA GEMS_COLLECTED
+        ;JSR sound_collect_gem
 
 	JMP dec_screen_hi_then_draw
 ; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
@@ -1243,6 +1251,24 @@ char_died:
 
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
+title_sound:
+        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
+        ;LDA #$05        ; want to set volume to 5
+        ;STA $900E       ; memory location for setting volumne
+
+	;JSR e_note
+        ;JSR delay_sound  
+        ;JSR sound_off
+
+	;JSR g_note
+        ;JSR delay_sound  
+        ;JSR sound_off
+
+	;JSR d_note
+        ;JSR delay_sound  
+        ;JSR sound_off
+
+        RTS
 
 sound_dead:	
         LDA #$05 	; want to set volume to 5
@@ -1260,6 +1286,25 @@ sound_dead:
 	;JSR d_note
 	
 	JMP sound_off
+
+sound_collect_gem:
+        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
+
+	LDA #$05
+	STA $900E       ; memory location for setting volumne
+
+	LDA #$D7       
+        STA $900B 
+	LDA #$EE       
+        STA $900C      ; Store the value in memory address 36874 ($90B in hex)
+        JSR delay_sound
+        JSR delay_sound
+	
+	LDA #$00
+        STA $900C
+	STA $900B
+
+        JMP sound_off
 
 c_note:
 	LDA #$87        
@@ -1280,6 +1325,26 @@ d_note:
         STA $900A
 
 	RTS
+
+e_note:
+        LDA #$9F      
+        STA $900C
+        JSR loop
+
+        LDA #$00
+        STA $900C
+
+        RTS
+
+g_note:
+        LDA #$EB       ; Load the value 135 (87 in hex) into the A register
+        STA $900C
+        JSR loop
+
+        LDA #$00
+        STA $900C
+
+        RTS
 
 delay_sound:
  ; increment the counter
