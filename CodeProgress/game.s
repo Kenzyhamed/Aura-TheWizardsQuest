@@ -32,15 +32,6 @@ THREE_LOCATION = $1C40
 
 VIC_CHAR_REG = $9005
 
-GEM_ONE_SCREEN_LOCATION = $1E30
-GEM_ONE_COLOR_LOCATION = $9630
-
-GEM_TWO_SCREEN_LOCATION = $1FD0
-GEM_TWO_COLOR_LOCATION = $97D0
-
-GEM_THREE_SCREEN_LOCATION = $1FE0
-GEM_THREE_COLOR_LOCATION = $97E0
-
 COUNT_FOR_LOOP = $0003
 COLOR_FOR_LOOP = $0004
 COUNTER = $0005
@@ -129,10 +120,10 @@ GEM:
         ;org GEM_LOCATION
         dc.b %00011000
         dc.b %00011000
-        dc.b %00011000
+        dc.b %00111100
         dc.b %11111111
         dc.b %11111111
-        dc.b %00011000
+        dc.b %00111100
         dc.b %00011000
         dc.b %00011000
 
@@ -197,6 +188,13 @@ START_ADDRESS_DANGER_PLATFORM:
 ; Define the starting address in an array
 START_ADDRESS_COLOR_DANGER_PLATFORM:
     .byte $40, $97, $41, $97, $42, $97, $ff  ; Low byte ($20), High byte ($1E)
+
+START_ADDRESS_GEM:
+    .byte $30, $1E, $D0, $1F, $E0, $1F, $ff 
+
+; Define the starting address in an array
+START_ADDRESS_COLOR_GEM:
+    .byte $30, $96, $D0, $97, $E0, $97, $ff 
 
 SPAWN_ADDRESS:
     .byte $1C, $1E ; Low byte ($20), High byte ($1E)
@@ -598,7 +596,7 @@ color_danger_platform:
         ; Load the starting address into A
         LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x 
         CMP #$FF 
-        BEQ char_screen     
+        BEQ goto_print_gem     
         STA COLOR_POS_LO       
         
         INX            
@@ -614,27 +612,73 @@ color_danger_platform:
 
         jmp color_danger_platform
 
+goto_print_gem:
+        ldx #$00
+
+print_gem:
+        ; Load the starting address into A
+        LDA START_ADDRESS_GEM,x 
+        CMP #$FF       
+        BEQ goto_color_gem 
+        STA SCREEN_POS_LO        
+
+        INX
+
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_GEM,x    
+        STA SCREEN_POS_HI        
+
+        LDA #$04
+        jsr draw_platform
+
+        INX
+              
+        JMP print_gem
+
+goto_color_gem:
+        ldx #$00
+
+color_gem:
+        ; Load the starting address into A
+        LDA START_ADDRESS_COLOR_GEM,x 
+        CMP #$FF 
+        BEQ char_screen     
+        STA COLOR_POS_LO       
+        
+        INX            
+        
+        ; Load the high byte of the starting address
+        LDA START_ADDRESS_COLOR_GEM,x    
+        STA COLOR_POS_HI      
+        
+        LDA #$07
+        jsr color_platform
+
+        INX
+
+        jmp color_gem
 
 ; --------------------------------------------- GEM CODE ---------------------------------------------------
-place_gems:
-	LDA #$04
+;place_gems:
+
+	;LDA #$04
 	
-	STA GEM_ONE_SCREEN_LOCATION
-	STA GEM_TWO_SCREEN_LOCATION
-	STA GEM_THREE_SCREEN_LOCATION
+	;STA GEM_ONE_SCREEN_LOCATION
+	;STA GEM_TWO_SCREEN_LOCATION
+	;STA GEM_THREE_SCREEN_LOCATION
 	
-	LDA #$07
+;	LDA #$07
 
-	STA GEM_ONE_COLOR_LOCATION
-	STA GEM_TWO_COLOR_LOCATION
-	STA GEM_THREE_COLOR_LOCATION
+;	STA GEM_ONE_COLOR_LOCATION
+;	STA GEM_TWO_COLOR_LOCATION
+;	STA GEM_THREE_COLOR_LOCATION
 
-	LDA #$05
-	sta GEM_COUNTER
-        lda GEM_COUNTER
-	STA GEMS_COLLECTED
+;	LDA #$05
+;	sta GEM_COUNTER
+ ;       lda GEM_COUNTER
+;	STA GEMS_COLLECTED
 
-        RTS
+;        RTS
 
 check_gem_left:
         CMP #$04
@@ -723,7 +767,13 @@ char_screen:
         LDA #$00
         jsr draw_platform
 
-        jsr place_gems  
+      ;  jsr place_gems  
+
+
+      	LDA #$05
+	sta GEM_COUNTER
+        lda GEM_COUNTER
+	STA GEMS_COLLECTED
 
 ; --------------------------------------------- MOVE CODE ---------------------------------------------------
 
