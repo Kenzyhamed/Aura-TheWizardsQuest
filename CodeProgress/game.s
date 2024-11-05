@@ -42,6 +42,8 @@ COLOR_FOR_LOOP = $0004
 COUNTER = $0005
 USE_NEXT_COLOR_MEMORY =  $0006
 GEM_COUNTER = $0007
+SOUND_COUNTER = $0008 
+SOUND_LOOP_COUNT = $0009
 
 GEMS_COLLECTED = $1E15
 
@@ -501,6 +503,11 @@ start_level:
 	sta GEM_COUNTER
         lda GEM_COUNTER
 	STA GEMS_COLLECTED
+
+        LDA #$01
+	STA SOUND_COUNTER
+	LDA #$00             ; Initialize LOOP_COUNT to 0
+	STA SOUND_LOOP_COUNT
 
 ; --------------------------------------------- BORDER CODE ---------------------------------------------------
         
@@ -1068,7 +1075,6 @@ continue_color:
         jmp loop
 
 char_died_horizontal:
-
         LDA #$09                    ; Load the character code for the blank platform
         jsr draw_platform          ; Draw the blank character at the reverted position
         ldy #01
@@ -1227,11 +1233,75 @@ char_died:
         SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
         STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
 
+        JSR sound_dead
+
         LDA #$09                    ; Load the character code for the blank platform
         jsr draw_platform          ; Draw the blank character at the reverted position
         ldy #01
         jmp color_char
 
+
+
+; ---------------------------- SOUND EFFECTS ----------------------------
+
+sound_dead:	
+        LDA #$05 	; want to set volume to 5
+        STA $900E	; memory location for setting volumne
+
+	;LDA #'D
+	;JSR CHROUT
+
+	JSR c_note
+   	
+     	JSR d_note
+	
+	;JSR c_note
+	
+	;JSR d_note
+	
+	JMP sound_off
+
+c_note:
+	LDA #$87        
+        STA $900A       ; Store the value in memory address 36874 ($90B in hex)
+	JSR delay_sound
+	
+	LDA #$00
+        STA $900A
+	
+	RTS
+
+d_note:
+	LDA #$93
+        STA $900A
+	JSR delay_sound
+
+	LDA #$00
+        STA $900A
+
+	RTS
+
+delay_sound:
+ ; increment the counter
+	LDA SOUND_COUNTER
+        INC SOUND_COUNTER
+
+        CMP #$02	
+	BNE delay_sound
+
+	LDA SOUND_LOOP_COUNT       ; Load LOOP_COUNT
+	INC SOUND_LOOP_COUNT       ; Increment LOOP_COUNT
+	
+	CMP #$01             ; Compare LOOP_COUNT with 1
+	BNE delay_sound        ; If LOOP_COUNT isn't 1, loop again
+
+	RTS
+
+sound_off:
+	LDA #$00
+        STA $900E
+	
+	RTS
 ; ---------------------------- DRAW AND COLOR CODE BEING USED AT A FEW PLACES ----------------------------
 
 draw_platform:
