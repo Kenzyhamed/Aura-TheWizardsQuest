@@ -1,20 +1,29 @@
         processor 6502
 
-CHROUT = $ffd2       ; KERNAL routine to output a character
+; TODO: we have used CMP after LDA throughout the code. since LDA sets the condition - we don't need to use CMP after. this needs to be changed. 
+
+; KERNEL routines
+CHROUT = $ffd2  
 CLRCHN = $ffcc
 HOME = $ffba
-GETIN = $FFE4      ; Address for GETIN
+GETIN = $FFE4      
 
 ; Define boundaries for screen position high byte
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
 SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
 
-SCREEN_MEM = $1E00
-COLOR_MEM = $9600
+; screen addresses
+SCREEN_START = $1E00 	; Start of screen memory in VIC-20
+SCREEN_WIDTH = 22       ; VIC-20 screen width (22 columns)
+SCREEN_HEIGHT = 23      ; VIC-20 screen height (23 rows)
+COLOR_START = $9600     ; Color memory start    
+COLOR_MEM = $9600       ; TODO: we don't need 2 variables for the same address. we can change the code to use one.
 NEXT_COLOR_MEM = $96FF
-BACKGROUND_COLOR_ADDRESS = $900F    ; Background color address    
+VIC_CHAR_REG = $9005
 
 
+
+; these are the addresses for our custom character set
 CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
 DANGER_PLATFORM_LOCATION = $1C10
@@ -29,22 +38,19 @@ DOOR_LOCATION = $1C50
 DOOR_HANDLE_LOCATION = $1C58
 CHAR_RIGHT_LOCATION = #$1C60
 
-
-VIC_CHAR_REG = $9005
-
-
+; addresses to store counts/variables
 COUNT_FOR_LOOP = $0003
 COLOR_FOR_LOOP = $0004
 COUNTER = $0005
 USE_NEXT_COLOR_MEMORY =  $0006
-GEM_COUNTER = $0007
 SOUND_COUNTER = $0008 
 SOUND_LOOP_COUNT = $0009
 LEVEL_COUNTER = $000A
 
+; this is a screen memory address to that the count shows on the screen 
 GEMS_COLLECTED = $1E15
 
-
+; screen memory variables
 SCREEN_POS_LO   = $00   ; Low byte of screen memory address
 SCREEN_POS_HI   = $01   ; High byte of screen memory address
 COLOR_POS_LO    = $02   ; Low byte of color memory address
@@ -52,27 +58,37 @@ COLOR_POS_HI    = $03   ; High byte of color memory address
 TEMP_SCREEN_POS_LO   = $04   ; Low byte of screen memory address
 TEMP_SCREEN_POS_HI   = $05   ; High byte of screen memory address
 
-SCREEN_START = $1E00 	; Start of screen memory in VIC-20
-SCREEN_WIDTH = 22       ; VIC-20 screen width (22 columns)
-SCREEN_HEIGHT = 23      ; VIC-20 screen height (23 rows)
-COLOR_START = $9600     ; Color memory start    
+; repeated variables
+; TODO: add variables for all our custom characters
+CHARACTER_VAR = #$DF ; TODO: this isn't printing the correct character. need to look into this and use this instead of repeating DF
 
         org $1001    ; Starting memory location
 
         include "stub.s"
 
+; This is the data for inital text on the screen it says 
+; AURA:THE WIZARDS QUEST  
+; 
+; SHAHZILL NAVEED
+; MUTEEBA JAMAL
+; KENZY HAMED
+; 2024
 msg:
         HEX 41 55 52 41 3A 54 48 45 20 57 49 5A 41 52 44 53 20 51 55 45 53 54 0D 53 48 41 48 5A 49 4C 4C 20 4E 41 56 45 45 44 0A 0D 4D 55 54 45 45 42 41 20 4A 41 4D 41 4C 0A 0D 4B 45 4E 5A 59 20 48 41 4D 45 44 0A 0D 32 30 32 34 0D 00
 
+; these are the values for the hat characters that need to be stored in the screen memory
 hatChar: 
         HEX 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 A6 0D 20 7A 20 A6 20 7A 0D 20 A6 0D 20 A6 20 7A 0D 20 76 0D 20 A6 0D 20 A6 20 7A 0D 20 50 52 45 53 20 41 20 54 4F 20 50 4C 41 59 00 
 
+; this is the number of times the character in hatChar, at the same index, needs to be repeated on the screen
 hatCharCount: 
         HEX 0A 01 01 02 01 06 03 01 08 05 01 04 01 02 07 01 06 09 01 06 09 01 02 01 02 0B 04 01 01 05 0B 01 05 0B 02 01 01 04 0D 01 03 0F 01 03 0F 02 01 02 03 01 01 01 02 01 01 01 01 01 01 01 01 01 01 01
 
+; these are the coLor values for the titlescreen that need to be stored in the color memory
 colorValues:
         HEX 00 04 07 04 07 04 07 04 07 04 07 04 07 00 FF
 
+; this is the number of times the color in colorValues, at the same index, needs to be repeated in the color memory
 countValues:
         HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
 
@@ -389,7 +405,8 @@ clear_screen:
 
 ; ----------------------------------- COPY CHAR DATA CODE -----------------------------------
 
-        ldx #$00
+; TODO: the last four lines seem to be repetive for these. make this a subroutine.
+        ldx #$00 
 copy_char_data:
         lda CHAR,x              
         sta CHAR_LOCATION,x     
@@ -634,8 +651,6 @@ start_level:
         sta VIC_CHAR_REG 
 
         LDA #$05                        ; setting the gem counter to zero
-	sta GEM_COUNTER
-        lda GEM_COUNTER
 	STA GEMS_COLLECTED
 
         LDA #$01
@@ -644,7 +659,7 @@ start_level:
 	STA SOUND_LOOP_COUNT
 
 ; --------------------------------------------- BORDER CODE ---------------------------------------------------
-        
+; TODO: some of the border code is repetitive. we can make this a subroutine. 
 ; Set up the top border
         lda #$DF                        ; Character to represent the border
         ldx #SCREEN_WIDTH               ; Number of characters to print
@@ -976,10 +991,9 @@ check_gem_hi_increment_left:
         RTS
 
 increment_gem_counter_left:
-	INC GEM_COUNTER
-	LDA GEM_COUNTER
-	
-	STA GEMS_COLLECTED
+        LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED
 
         ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
         ;JSR sound_collect_gem 
@@ -987,10 +1001,9 @@ increment_gem_counter_left:
 	JMP continue_drawing_left
         
 increment_gem_counter_hi_left:
-	INC GEM_COUNTER
-	LDA GEM_COUNTER
-	
-	STA GEMS_COLLECTED
+	LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED
         ;JSR sound_collect_gem
 
 	JMP inc_screen_hi_then_draw
@@ -1006,20 +1019,19 @@ check_gem_hi_increment_right:
         RTS
 
 increment_gem_counter_right:
-	INC GEM_COUNTER
-	LDA GEM_COUNTER
-	
-	STA GEMS_COLLECTED
+	LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED
        ; JSR sound_collect_gem
 
 	JMP continue_drawing_right
         
 increment_gem_counter_hi_right:
         ; TODO: instead of using this counter, we should load the value from GEMS_COLLECTED and increment that
-	INC GEM_COUNTER 
-	LDA GEM_COUNTER
-	
-	STA GEMS_COLLECTED
+	LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED
+
         ;JSR sound_collect_gem
 
 	JMP dec_screen_hi_then_draw
@@ -1060,8 +1072,6 @@ char_screen:
 
 
       	LDA #$05
-	sta GEM_COUNTER
-        lda GEM_COUNTER
 	STA GEMS_COLLECTED
 
         LDX #$00
