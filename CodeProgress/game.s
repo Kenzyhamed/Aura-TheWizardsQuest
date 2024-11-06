@@ -1,9 +1,3 @@
-; this is our title screen. we loaded the hex values to write all the required info
-; (title, names, year) and draw a wizards hat. we are using the CHROUT routine to put these on the screen.
-; we stored all the color data in another HEX variable.
-; since the counter maxes out at 255 we have another color memory address variable that starts at 38400 + 255
-; so we can starts from 0 again and continue updating the color memory
-
         processor 6502
 
 CHROUT = $ffd2       ; KERNAL routine to output a character
