@@ -218,6 +218,10 @@ DOOR_HANDLE:
         dc.b %11111111
 
 ;--------------------------------------- LEVEL 1 DATA ---------------------------
+; TODO: The platforms arrays need to be optimized. Instead of sending in address for each platform block, we will send address for the first block and the next byte wil contain how many blocks are required to be print_danger_platform
+; on the next locations. this would decrease the amount memory used currently. 
+
+; TODO: if the door is being printed at the same loaction then we will need that address only for one level and not for all. 
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM:
@@ -1583,7 +1587,7 @@ DelayLoopY:
 ; ---------------------------------------- LOAD NEW LEVEL -------------------------
 ; this whole routine needs to be opimized. right now we have seperate methods for each level but in the future we should find a way to 
 ; call these setup levels using an offset
- 
+
 load_new_level:
         ; TODO: replace this with the code to load the next level. this is for proof of concept.
         ldx #$00
