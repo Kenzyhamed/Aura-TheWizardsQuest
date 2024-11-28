@@ -7,6 +7,13 @@ CHROUT = $ffd2
 CLRCHN = $ffcc
 HOME = $ffba
 GETIN = $FFE4      
+; Constants
+GRAVITY = $0220              ; Defines gravity (e.g., 1 pixel per cycle)
+
+; Variables
+JUMP_COUNTER = $0230         ; Tracks how high the character has jumped-X
+JUMPRU_COUNTER=$0250
+DIAGONAL = $0240         ; Tracks how high the character has jumped-Y
 
 ; Define boundaries for screen position high byte
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
@@ -1104,20 +1111,21 @@ loop:
         beq loop                     ; If no key, continue loop
         cmp #'J                     ; Check if 'J' was pressed (move left)
         beq moveleft
+        cmp #$20                     ; Check if 'J' was pressed (move left)
+        beq jumpup
+        cmp #'M                     ; Check if 'J' was pressed (move left)
+        beq jumpright
         cmp #'L                     ; Check if 'L' was pressed (move right)
         beq moveright
         cmp #'R                     ; Check if 'R' was pressed (reset the level)
         beq goto_start_level
         jmp loop                     ; Continue the loop if no recognized key
-
 goto_start_level:
         jmp start_level
-
 moveright:
         jsr draw_right
         jsr color_char
-        jmp loop
-        
+        jmp loop       
 moveleft:
         jsr draw_left
         jsr color_char          ; TODO: i think we can remove this
@@ -1186,6 +1194,7 @@ goto_start_level_after_dying:
         ldy #$00
         jsr DelayLoop
         jmp start_level
+
         
 continue_drawing_left:
         inc SCREEN_POS_LO
@@ -1210,7 +1219,8 @@ color_char:
         CMP #$1F                   ; Compare with 1F
         BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
 
-        JMP continue_color
+        jsr continue_color
+        rts
 
 continue_color:
         LDA SCREEN_POS_LO         ; Load the low byte of the screen position
@@ -1226,13 +1236,14 @@ continue_color:
         TXA
         CMP #$01       
         BEQ goto_start_level_after_dying
-        jmp loop
+        rts
 
 char_died_horizontal:
         LDA #$09                    
         jsr draw_platform          
         ldy #01
-        jmp color_char
+        jsr color_char
+        jmp loop
 
 incremented_screen_hi:
         ; Load value at new position and compare with blank space
@@ -1414,7 +1425,8 @@ cannot_move_down_right:
         LDA #12                   
         jsr draw_platform          
        
-        jmp color_char
+        jsr color_char
+        jmp loop
 
 cannot_move_down_left:
         SEC                  ; Set the carry to prepare for subtraction
@@ -1425,7 +1437,8 @@ cannot_move_down_left:
         LDA #00                  
         jsr draw_platform         
        
-        jmp color_char
+        jsr color_char
+        jmp loop
 
 char_died:
         SEC                  ; Set the carry to prepare for subtraction
@@ -1437,7 +1450,8 @@ char_died:
         jsr draw_platform          ; Draw the blank character at the reverted position
         
         ldy #01
-        jmp color_char
+        jsr color_char
+        jmp loop
 
 
 
