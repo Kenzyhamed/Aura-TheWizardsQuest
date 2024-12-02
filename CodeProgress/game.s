@@ -252,11 +252,11 @@ START_ADDRESS_COLOR_DANGER_PLATFORM:
     .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
 
 SPAWN_ADDRESS:
-    .byte $D5, $1F ; Low byte ($20), High byte ($1E)
+    .byte $0F, $1F ; Low byte ($20), High byte ($1E)
 
 ; Define the starting address in an array
 SPAWN_ADDRESS_COLOR:
-    .byte $D5, $97 ; Low byte ($20), High byte ($1E)
+    .byte $0F, $97 ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS:
         .byte $D1, $1F, $D0, $1F, $E0, $1F, $ff
