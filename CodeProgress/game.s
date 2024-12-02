@@ -12,6 +12,11 @@ GETIN = $FFE4
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
 SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
 
+ 
+JUMP_COUNTER = $0230         ; Tracks how high the character has jumped-X
+JUMPRU_COUNTER=$0250
+DIAGONAL = $0240    
+
 ; screen addresses
 SCREEN_START = $1E00 	; Start of screen memory in VIC-20
 SCREEN_WIDTH = 22       ; VIC-20 screen width (22 columns)
@@ -231,38 +236,31 @@ DOOR_HANDLE:
         dc.b %11111111
         dc.b %11111111
 
+CURRENT_NORMAL_ADDR:
+    .word 0x0000   ; Reserve 2 bytes for storing a 16-bit address
+
+CURRENT_COLOR_ADDR:
+    .word 0x0000   ; Reserve 2 bytes for storing a 16-bit address
+
+TEMP_ADDR:
+    .byte 0x00     ; First byte of the 16-bit address
+    .byte 0x00     ; Second byte of the 16-bit address
+
 ;--------------------------------------- LEVEL 1 DATA ---------------------------
-srcPlatformPtr:  .byte $00      ; Low byte of the source platform address
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM:
-    .byte  $25, $1F, $07, $FF, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-
-
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM:
-    .byte  $25, $97, $07, $FF, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+    .byte  $25, $1E, $07, $FF, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
 
 
 START_ADDRESS_DANGER_PLATFORM:
-    .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-
-; Define the starting address in an array
-START_ADDRESS_COLOR_DANGER_PLATFORM:
-    .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+    .byte  $45, $1F, $03, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
 
 SPAWN_ADDRESS:
-    .byte $0F, $1F ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR:
-    .byte $0F, $97 ; Low byte ($20), High byte ($1E)
+    .byte $D5, $1F ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS:
         .byte $D1, $1F, $D0, $1F, $E0, $1F, $ff
-
-GEM_ADDRESS_COLOR:
-        .byte $D1, $97, $D0, $97, $E0, $97, $ff 
 
 DOOR_ADDRESS:
         .byte $CC, $1F, $ff
@@ -280,98 +278,40 @@ DOOR_BOTTOM_COLOR_ADDRESS:
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_2:
-    .byte $37, $1E, $03, $49, $1E, $02, $ff 
+    .byte $27, $1F, $09, $ff 
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_2:
-    .byte $37, $96, $03, $49, $96, $02, $ff
 
 SPAWN_ADDRESS_LVL_2:
-    .byte $10, $1F ; Low byte ($20), High byte ($1E)
+    .byte $20, $1E ; Low byte ($20), High byte ($1E)
 
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR_LVL_2:
-    .byte $10, $97 ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_2:
         .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
-
-GEM_ADDRESS_COLOR_LVL_2:
-        .byte $11, $97, $D0, $97, $E0, $97, $ff 
 
 ;--------------------------------------- LEVEL 3 DATA ---------------------------
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_3:
-    .byte $2B, $1F, $03, $2B, $1E, $03, $3C, $1E, $03, $FF 
+    .byte $37, $1E, $03, $ff 
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_3:
-    .byte $2B, $97, $03, $2B, $96, $03, $3C, $96, $03, $FF
-
-START_ADDRESS_DANGER_PLATFORM_LVL_3:
-    .byte $3D, $1F, $02 ,$45, $1F, $03, $ff  ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-START_ADDRESS_COLOR_DANGER_PLATFORM_LVL_3:
-    .byte $3D, $97, $02, $45, $97, $03, $ff  ; Low byte ($20), High byte ($1E) 
 
 SPAWN_ADDRESS_LVL_3:
-    .byte $17, $1F ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR_LVL_3:
-    .byte $17, $97 ; Low byte ($20), High byte ($1E)
+    .byte $20, $1E ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_3:
-        .byte $D6, $1F, $9B, $1F, $15, $1F, $ff
-
-GEM_ADDRESS_COLOR_LVL_3:
-        .byte $D6, $97, $9B, $97, $15, $97, $ff
+        .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
 
 
-;--------------------------------------- LEVEL 4 DATA ---------------------------
+
+START_ADDRESS_NORMAL_PLATFORM_TABLE:
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_2
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_3
 
 
-; Define the starting address in an array
-START_ADDRESS_NORMAL_PLATFORM_LVL_4:
-    .byte  $63, $1F, $64, $1F, $65, $1F, $46, $1E, $47, $1E, $48, $1E, $49, $1E, $85, $1E, $86, $1E, $87, $1E, $88, $1E, $8A, $1E, $8B, $1E, $8C, $1E, $8D, $1E, $8E, $1E, $8F, $1E, $90, $1E, $91, $1E, $29, $1F, $2A, $1F, $2B, $1F, $2C, $1F, $2D, $1F, $2E, $1F, $ff ,$fe; Low byte ($20), High byte ($1E)
+SPAWN_ADDRESS_TABLE:
+    .word SPAWN_ADDRESS_LVL_2
+    .word SPAWN_ADDRESS_LVL_3
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_4:
-    .byte  $63, $97, $64, $97, $65, $97, $46, $96, $47, $96, $48, $96, $49, $96, $85, $96, $86, $96, $87, $96, $88, $96, $8A, $96, $8B, $96, $8C, $96, $8D, $96, $8E, $96, $8F, $96, $90, $96, $91, $96, $29, $97, $2A, $97, $2B, $97, $2C, $97, $2D, $97, $2E, $97, $ff ,$fe; Low byte ($20), High byte ($1E)
-
-START_ADDRESS_DANGER_PLATFORM_LVL_4:
-    .byte $3D, $1F, $3E, $1F ,$45, $1F, $46, $1F, $47, $1F, $8B, $1E, $62, $1F, $ff  ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-START_ADDRESS_COLOR_DANGER_PLATFORM_LVL_4:
-    .byte $3D, $97, $3E, $97, $45, $97, $46, $97, $47, $97, $8B, $96, $62, $97, $ff  ; Low byte ($20), High byte ($1E)
-
-SPAWN_ADDRESS_LVL_4:
-    .byte $31, $1E ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR_LVL_4:
-    .byte $31, $96 ; Low byte ($20), High byte ($1E)
-
-GEM_ADDRESS_LVL_4:
-        .byte $33, $1E, $D0, $1F, $E0, $1F, $ff
-
-GEM_ADDRESS_COLOR_LVL_4:
-        .byte $33, $96, $D0, $97, $E0, $97, $ff
-
-DOOR_ADDRESS_LVL_4:
-        .byte $CC, $1F, $ff
-
-DOOR_COLOR_ADDRESS_LVL_4:
-        .byte $CC, $97, $ff
-
-DOOR_BOTTOM_ADDRESS_LVL_4:
-        .byte $E2, $1F, $ff
-
-DOOR_BOTTOM_COLOR_ADDRESS_LVL_4:
-        .byte $E2, $97, $ff
 
 
 
@@ -755,11 +695,17 @@ inc_screen_lo_then_draw_normal:
         INC SCREEN_POS_LO
         JMP print_normal_platform
 
+color_is_96:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_normal_platform    
+        
+
 goto_color_normal_platform:
         ldx #$00            
 
 load_color_normal_platform:
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x  
+        LDA START_ADDRESS_NORMAL_PLATFORM,x  
         CMP #$FF                        ; Check if we've reached the end of color data
         BEQ goto_print_danger_platform  ; Branch if at the end of color data
         
@@ -767,11 +713,15 @@ load_color_normal_platform:
         INX                              ; Move to the next byte in the array
 
         ; Load the high byte of the starting address
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x    
-        STA COLOR_POS_HI                 ; Store in high byte register
-        
+        LDA START_ADDRESS_NORMAL_PLATFORM,x    
+        CMP #$1E
+        BEQ color_is_96                ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI
+
+continue_color_normal_platform:      
         INX
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x    ; Number of platforms to color
+        LDA START_ADDRESS_NORMAL_PLATFORM,x    ; Number of platforms to color
         STA COLOR_FOR_LOOP
         INX
         
@@ -825,23 +775,32 @@ inc_screen_lo_then_draw_danger:
         INC SCREEN_POS_LO                     ; Increment screen position low byte
         JMP print_danger_platform        ; Continue drawing danger platforms
 
+color_is_96_danger:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_danger_platform   
+
 ; Set up for coloring danger platforms
 goto_color_danger_platform:
         LDX #$00                              ; Reset X index for color data
 
 load_color_danger_platform:
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x  ; Load low byte of color address
+        LDA START_ADDRESS_DANGER_PLATFORM,x  ; Load low byte of color address
         CMP #$FF                                   ; Check for the end of color data
         BEQ goto_print_gem                         ; If end, move to next game element
 
         STA COLOR_POS_LO                            ; Store the low byte of color address
         INX                                        ; Move to the high byte
 
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x  ; Load high byte of color address
-        STA COLOR_POS_HI                            ; Store the high byte
+        LDA START_ADDRESS_DANGER_PLATFORM,x  ; Load high byte of color address
+        CMP #$1E
+        BEQ color_is_96_danger                ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI
 
+continue_color_danger_platform:
         INX                                        ; Move to color count
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x  ; Load color count
+        LDA START_ADDRESS_DANGER_PLATFORM,x  ; Load color count
         STA COLOR_FOR_LOOP                         ; Store the count for applying colors
 
         INX                                        ; Increment index
@@ -884,12 +843,17 @@ print_gem:
               
         JMP print_gem
 
+color_is_96_gem:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_gem  
+
 goto_color_gem:
         ldx #$00
 
 color_gem:
         ; Load the starting address into A
-        LDA GEM_ADDRESS_COLOR,x 
+        LDA GEM_ADDRESS,x 
         CMP #$FF 
         BEQ goto_print_door_top   
         STA COLOR_POS_LO       
@@ -897,9 +861,13 @@ color_gem:
         INX            
         
         ; Load the high byte of the starting address
-        LDA GEM_ADDRESS_COLOR,x    
-        STA COLOR_POS_HI      
-        
+        LDA GEM_ADDRESS,x
+        CMP #$1E
+        BEQ color_is_96_gem               ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI     
+
+continue_color_gem:
         LDA #$07
         jsr color_platform
 
@@ -1059,6 +1027,10 @@ increment_gem_counter_hi_right:
 	JMP dec_screen_hi_then_draw
 ; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
 ; spawning code prints the character at the spawn location
+color_is_96_spawn:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_spawn  
 char_screen:
 ; point VIC to use custom character set
         LDA #$ff                  
@@ -1066,15 +1038,19 @@ char_screen:
 
         ldx #$00
 
-        LDA SPAWN_ADDRESS_COLOR,x 
+        LDA SPAWN_ADDRESS,x 
         STA COLOR_POS_LO        
 
         INX     
         
         ; Load the high byte of the starting address
-        LDA SPAWN_ADDRESS_COLOR,x   
-        STA COLOR_POS_HI      
+        LDA SPAWN_ADDRESS,x   
+        CMP #$1E
+        BEQ color_is_96_spawn               ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI  
 
+continue_color_spawn:
         LDA #$00
         jsr color_platform
         ldx #$00
@@ -1129,6 +1105,9 @@ loop:
         beq moveright
         cmp #'R                     ; Check if 'R' was pressed (reset the level)
         beq goto_start_level
+        cmp #'M                     ; Check if 'J' was pressed (move left)
+        ;beq goto_jumpright
+
         jmp loop                     ; Continue the loop if no recognized key
 
 goto_start_level:
@@ -1613,96 +1592,57 @@ DelayLoopY:
 ; call these setup levels using an offset
 
 load_new_level:
-        ; TODO: replace this with the code to load the next level. this is for proof of concept.
-        ldx #$00
-        INC LEVEL_COUNTER
-        LDA LEVEL_COUNTER
-        CMP #$02
-        BEQ copy_lvl2
-        CMP #$03
-        BEQ copy_lvl3
-        CMP #$04
-        BEQ goto_copy_lvl4
+    ldx #$00               ; Reset X register
+    ;INC LEVEL_COUNTER       ; Increment the level counter
+    LDA LEVEL_COUNTER
+    CMP #$05                ; Check if we're beyond the last level
+    BEQ goto_jmp_start_level    ; If so, go back to start
+    JSR copy_level_data   ; Otherwise, copy level data
+    JMP start_level         ; Continue to the start level
 
-        JMP start_level
+; Copy subroutine
+copy_level_data:
+    LDA LEVEL_COUNTER            ; Load the current level number (index for the table)
+    TAY                          ; Store the level number in Y register for indexing
 
-goto_copy_lvl4:
-        jmp copy_lvl4
+    ; Copy Normal Platform Data
+    LDA START_ADDRESS_NORMAL_PLATFORM_TABLE,Y  ; Load base address of current level's normal platform data
+    STA TEMP_ADDR               ; Store it in a temporary address (low byte)
+    LDA START_ADDRESS_NORMAL_PLATFORM_TABLE+1,Y  ; Load the high byte of the address
+    STA TEMP_ADDR+1             ; Store it in TEMP_ADDR+1 (high byte)
 
-goto_start_level_2:
-        ldy #$00
-        ldx #$00
+    ; Dereference TEMP_ADDR to get the start address
+    LDA TEMP_ADDR               ; Load low byte of address from TEMP_ADDR
+    STA CURRENT_NORMAL_ADDR     ; Store it in CURRENT_NORMAL_ADDR (low byte)
+    LDA TEMP_ADDR+1             ; Load high byte of address from TEMP_ADDR+1
+    STA CURRENT_NORMAL_ADDR+1   ; Store it in CURRENT_NORMAL_ADDR (high byte)
 
-        jsr DelayLoop
-        jmp start_level
-copy_lvl2:
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_2,x ; Load from level 2 array
-        STA START_ADDRESS_NORMAL_PLATFORM,x
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_2,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_NORMAL_PLATFORM,x       
+    ; Dereference TEMP_ADDR to get the start address
+    LDA TEMP_ADDR               ; Load low byte of address from TEMP_ADDR
+    STA CURRENT_COLOR_ADDR      ; Store it in CURRENT_COLOR_ADDR (low byte)
+    LDA TEMP_ADDR+1             ; Load high byte of address from TEMP_ADDR+1
+    STA CURRENT_COLOR_ADDR+1    ; Store it in CURRENT_COLOR_ADDR (high byte)
 
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_2,x ; Load from level 2 array
-        cmp #$FF
-        beq goto_start_level_2
-        inx 
-        jmp copy_lvl2
-
-copy_lvl3:
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_3,x ; Load from level 2 array
-        STA START_ADDRESS_NORMAL_PLATFORM,x
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_3,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_NORMAL_PLATFORM,x
-
-        LDA START_ADDRESS_DANGER_PLATFORM_LVL_3,x ; Load from level 2 array
-        STA START_ADDRESS_DANGER_PLATFORM,x
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM_LVL_3,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_DANGER_PLATFORM,x
-
-
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_3,x ; Load from level 2 array
-        cmp #$FF
-        beq goto_start_level_3
-        inx 
-        jmp copy_lvl3
-
-
-copy_lvl4:
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_NORMAL_PLATFORM,x
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_NORMAL_PLATFORM,x
-
-        LDA START_ADDRESS_DANGER_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_DANGER_PLATFORM,x
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_DANGER_PLATFORM,x
-
-        LDA SPAWN_ADDRESS_LVL_4,x ; Load from level 2 array
-        STA SPAWN_ADDRESS,x
-        LDA SPAWN_ADDRESS_COLOR_LVL_4,x ; Load from level 2 array
-        STA SPAWN_ADDRESS_COLOR,x
-
-        LDA GEM_ADDRESS_LVL_4,x ; Load from level 2 array
-        STA GEM_ADDRESS,x
-        LDA GEM_ADDRESS_COLOR_LVL_4,x ; Load from level 2 array
-        STA GEM_ADDRESS_COLOR,x
-
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_4,x ; Load from level 2 array
-        cmp #$FE
-        beq goto_start_level_4
-        inx 
-        jmp copy_lvl4
-
-goto_start_level_3:
-        ldy #$00
-        ldx #$00
-
-        jsr DelayLoop
-        jmp start_level
+    ; Copy Normal Platform Data to the destination array
+    LDX #0                       ; Start at the first byte of the destination array
+copy_normal_loop:
         
-goto_start_level_4:
-        ldy #$00
-        ldx #$00
+    LDA CURRENT_NORMAL_ADDR,X    ; Load data from the current level's normal platform
+    STA START_ADDRESS_NORMAL_PLATFORM,X  ; Store data in the destination array
+                             ; Increment index
+    LDA CURRENT_NORMAL_ADDR,X    ; Check if we've reached the end of the data (use FF as the end marker)
+    CMP #$FF                     ; If it’s $FF, we're done
+    BEQ finish_copy      ; Jump to color platform copy routine
+        INX 
 
-        jsr DelayLoop
-        jmp start_level
+    JMP finish_copy       ; Otherwise, continue copying normal platform data
+
+finish_copy:
+    RTS                          ; Return from subroutine
+
+
+goto_jmp_start_level:
+    ldy #$00
+    ldx #$00
+    jsr DelayLoop
+    jmp start_level
