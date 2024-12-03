@@ -12,7 +12,10 @@ GETIN = $FFE4
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
 SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
 
- 
+; Variables for delay storage
+DELAY_LOW   = $FC  ; Temporary storage for low byte of delay
+DELAY_HIGH  = $FD  ; Temporary storage for high byte of delay
+
 JUMP_COUNTER = $0230         ; Tracks how high the character has jumped-X
 JUMPRU_COUNTER=$0250
 DIAGONAL = $0240    
@@ -41,6 +44,9 @@ DEAD_CHAR_LOCATION = $1C48
 DOOR_LOCATION = $1C50
 DOOR_HANDLE_LOCATION = $1C58
 CHAR_RIGHT_LOCATION = #$1C60
+HAT_FALLING_LEFT_LOCATION = $1c68
+HAT_FALLING_RIGHT_LOCATION = $1c70
+HAT_FALLING_LOCATION = $1c78
 
 ; addresses to store counts/variables
 COUNT_FOR_LOOP = $0003
@@ -50,6 +56,7 @@ USE_NEXT_COLOR_MEMORY =  $0006
 SOUND_COUNTER = $0008 
 SOUND_LOOP_COUNT = $0009
 LEVEL_COUNTER = $000A
+DIRECTION = $000B
 
 ; this is a screen memory address to that the count shows on the screen 
 GEMS_COLLECTED = $1E15
@@ -238,6 +245,38 @@ DOOR_HANDLE:
         dc.b %11111111
         dc.b %11111111
         dc.b %11111111
+        dc.b %11111111
+
+HAT_FALLING_LEFT: 
+        ; squish
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00001110
+        dc.b %00011000
+        dc.b %00111000
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+
+HAT_FALLING_RIGHT:
+       ; squish
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %01110000
+        dc.b %00011000
+        dc.b %00011100
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+
+HAT_FALLING:
+        dc.b %10010001
+        dc.b %10010001
+        dc.b %10010001
+        dc.b %00011000
+        dc.b %00111000
+        dc.b %00111100
+        dc.b %01111110
         dc.b %11111111
 
 LEVEL_OFFSETS:
@@ -442,6 +481,36 @@ copy_door_handle_data:
         cpx #8
         bne copy_door_handle_data
         ldx #$00
+
+copy_HAT_FALLING_LEFT_data:
+        lda HAT_FALLING_LEFT,x              
+        sta HAT_FALLING_LEFT_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_HAT_FALLING_LEFT_data       
+
+        ; copy PLATFORM data to $1c08
+        ldx #0
+
+copy_HAT_FALLING_RIGHT_data:
+        lda HAT_FALLING_RIGHT,x              
+        sta HAT_FALLING_RIGHT_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_HAT_FALLING_RIGHT_data       
+
+        ; copy PLATFORM data to $1c08
+        ldx #0
+
+copy_HAT_FALLING_data:
+        lda HAT_FALLING,x              
+        sta HAT_FALLING_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_HAT_FALLING_data       
+
+        ; copy PLATFORM data to $1c08
+        ldx #0
 
 ; -----------------------------------  TITLE SCREEN CODE -----------------------------------
 
@@ -1113,10 +1182,14 @@ goto_start_level:
         jmp start_level
 
 moveright:
+        lda #$01
+        sta DIRECTION
         jsr draw_right
         jmp loop
         
 moveleft:
+        lda #$00
+        sta DIRECTION
         jsr draw_left
         jmp loop
 
@@ -1145,8 +1218,6 @@ decremented_screen_hi:
         beq inc_screen_hi_then_draw
         cmp #$20 
         beq inc_screen_hi_then_draw
-        cmp #$02 
-        beq inc_screen_hi_then_die
 
         inc SCREEN_POS_LO
         inc SCREEN_POS_HI
@@ -1156,10 +1227,6 @@ decremented_screen_hi:
 inc_screen_hi_then_draw:
         inc SCREEN_POS_HI
         jmp continue_drawing_left
-
-inc_screen_hi_then_die:
-        inc SCREEN_POS_HI
-        jmp char_died_horizontal
 
 skip_decrement_screen_hi:
         ;Load value at new position and compare with blank space
@@ -1171,17 +1238,10 @@ skip_decrement_screen_hi:
         beq continue_drawing_left
         cmp #$20 
         beq continue_drawing_left
-        cmp #$02 
-        beq char_died_horizontal
+
         inc SCREEN_POS_LO
         
         jmp loop
-
-goto_start_level_after_dying:
-        JSR sound_dead
-        ldy #$00
-        jsr DelayLoop
-        jmp start_level
         
 continue_drawing_left:
         inc SCREEN_POS_LO
@@ -1194,41 +1254,6 @@ continue_drawing_left:
         dec SCREEN_POS_LO
         jmp no_high_increment_left
 
-color_char:
-        LDA SCREEN_POS_LO
-        STA COLOR_POS_LO
-        
-        ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
-        LDA SCREEN_POS_HI         ; Load the high byte of the screen position
-        CMP #$1E                   ; Compare with 1E
-        BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
-        CMP #$1F                   ; Compare with 1F
-        BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
-
-        JMP continue_color
-
-continue_color:
-        LDA SCREEN_POS_LO         ; Load the low byte of the screen position
-        STA COLOR_POS_LO          ; Store the low byte in COLOR_POS_LO
-        
-        TYA                             
-        TAX
-        ldy #$00
-        
-        lda #00 ; blank platform
-        jsr color_platform
-
-        TXA
-        CMP #$01       
-        BEQ goto_start_level_after_dying
-        jmp loop
-
-char_died_horizontal:
-        LDA #$09                    
-        jsr draw_platform          
-        ldy #01
-        jmp color_char
-
 incremented_screen_hi:
         ; Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      
@@ -1239,8 +1264,6 @@ incremented_screen_hi:
         beq dec_screen_hi_then_draw
         cmp #$20 
         beq dec_screen_hi_then_draw
-        cmp #$02 
-        beq dec_screen_hi_then_die
 
         dec SCREEN_POS_LO
         dec SCREEN_POS_HI
@@ -1256,12 +1279,12 @@ dec_screen_hi_byte:
 set_color_hi_96:
         LDA #$96                       
         STA COLOR_POS_HI                
-        jmp continue_color              
+        rts              
 
 set_color_hi_97:
         LDA #$97          
         STA COLOR_POS_HI                   
-        jmp continue_color                        
+        rts                      
 
 draw_right:
         CLC
@@ -1276,9 +1299,6 @@ dec_screen_hi_then_draw:
         dec SCREEN_POS_HI
         jmp continue_drawing_right
 
-dec_screen_hi_then_die:
-        dec SCREEN_POS_HI       
-        jmp char_died_horizontal
 
 skip_increment_screen_hi:
         ; Load value at new position and compare with blank space
@@ -1291,8 +1311,7 @@ skip_increment_screen_hi:
         beq continue_drawing_right
         cmp #$20 
         beq continue_drawing_right
-        cmp #$02 
-        beq char_died_horizontal
+
         dec SCREEN_POS_LO
         
         jmp loop
@@ -1309,11 +1328,6 @@ continue_drawing_right:
         INC SCREEN_POS_HI
         lda #12
         jsr draw_platform
-        jmp color_right
-
-color_right:
-        LDA #$FF                  
-        STA VIC_CHAR_REG          
 
         ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
         LDA SCREEN_POS_HI          ; Load the high byte of the screen position
@@ -1321,12 +1335,18 @@ color_right:
         BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
         CMP #$1F                   ; Compare with 1F
         BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
-        JMP continue_color
+
+        lda #$00
+        jsr color_platform
+
+        JMP loop
 
 no_high_increment_right:
+        LDX #$00
         jmp check_under_right
 
 no_high_increment_left:
+        LDX #$00
         jmp check_under_left
 
 check_under_right:        
@@ -1337,13 +1357,16 @@ check_under_right:
         CLC                        ; Clear carry for addition
         ADC #$16                   ; Add 0x16 (22 in decimal) to move one block down
         STA SCREEN_POS_LO          ; Update SCREEN_POS_LO to the new position
+        STA COLOR_POS_LO
 
         BCC check_under_no_carry_right     ; Branch if there is no carry (no high byte increment)
+       
         inc SCREEN_POS_HI
+        inc COLOR_POS_HI
+
         jmp check_under_no_carry_right
 
 check_under_no_carry_right:
-
         ldy #00
         ; Check if moving down is valid
         LDA (SCREEN_POS_LO),y ; Load the value at the new position
@@ -1357,14 +1380,59 @@ check_under_no_carry_right:
         inx
 
         ; Draw the character at the new position
-        LDA #00   
-        jsr draw_platform           
+        jsr fall_animation
+        
         jmp check_under_right
 
-check_under_left:
-        LDA #$ff                 
-        sta VIC_CHAR_REG 
+cannot_move_down_right:
+        SEC                  ; Set the carry to prepare for subtraction
+        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
+        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
+        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+        STA COLOR_POS_LO
+
+        jmp bounce_animation
+
+bounce_animation:
+        jsr handle_load_bounce_hat 
+        jsr draw_platform
         
+        LDA #$00
+        jsr color_platform
+        
+        jsr jiffy_delay_fast
+        jsr jiffy_delay_fast
+
+        jsr handle_load_hat
+        jsr draw_platform 
+        
+        jmp loop
+
+handle_load_bounce_hat:
+        lda DIRECTION
+        beq load_right_bounce
+
+        ; load left bounce if not equal        
+        lda #14
+        rts
+
+load_right_bounce:
+        lda #13
+        rts
+
+handle_load_hat:
+        lda DIRECTION
+        beq load_right_hat
+        
+        ; load left hat if not equal
+        lda #12
+        rts
+
+load_right_hat:
+        lda #00
+        rts
+
+check_under_left:       
         LDA SCREEN_POS_LO         
         STA TEMP_SCREEN_POS_LO
 
@@ -1372,13 +1440,36 @@ check_under_left:
         CLC                         
         ADC #$16                   
         STA SCREEN_POS_LO          
+        STA COLOR_POS_LO
 
         BCC check_under_no_carry_left    
         inc SCREEN_POS_HI
+        inc COLOR_POS_HI
         jmp check_under_no_carry_left
 
-check_under_no_carry_left:
+char_died:
+        SEC                  ; Set the carry to prepare for subtraction
+        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
+        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
+        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+        STA COLOR_POS_LO    ; Store the result back into SCREEN_POS_LO
 
+        LDA #$09                    ; Load the character code for the blank platform
+        jsr draw_platform          ; Draw the blank character at the reverted position
+        
+        LDA #$00
+        jsr color_platform          
+
+        jmp goto_start_level_after_dying
+
+goto_start_level_after_dying:
+        JSR sound_dead
+        ldy #$00
+        jsr DelayLoop
+        jmp start_level
+
+check_under_no_carry_left:
+        inx
         ldy #00
         ; Check if moving down is valid
         LDA (SCREEN_POS_LO),y ; Load the value at the new position
@@ -1389,49 +1480,60 @@ check_under_no_carry_left:
         CMP BORDER_CHAR                   
         BEQ cannot_move_down_left       
 
-        inx
 
         ; Draw the character at the new position
-        LDA #00   
-        jsr draw_platform           
+        jsr fall_animation
         jmp check_under_left
-
-
-cannot_move_down_right:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
-
-        LDA #12                   
-        jsr draw_platform          
-       
-        jmp color_char
 
 cannot_move_down_left:
         SEC                  ; Set the carry to prepare for subtraction
         LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
         SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
         STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+        STA COLOR_POS_LO
 
-        LDA #00                  
-        jsr draw_platform         
-       
-        jmp color_char
+        jmp bounce_animation
 
-char_died:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+jiffy_delay_fast:
+        TXA
+        jsr DelayLoop2
+        TAX
+        rts
+    ; Calculate target jiffy time
+   ; LDA $A2            ; Low byte of current jiffy clock
+   ; CLC
+   ; ADC #$04           ; Add a small delay (2 jiffies)
+   ; STA DELAY_LOW      ; Store target low byte
+   ; LDA $A3            ; High byte of current jiffy clock
+   ; ADC #$00           ; Carry over to high byte if necessary
+   ; STA DELAY_HIGH     ; Store target high byte
 
-        LDA #$09                    ; Load the character code for the blank platform
-        jsr draw_platform          ; Draw the blank character at the reverted position
+.wait:
+    ; Wait until the jiffy clock reaches or exceeds the target time
+   ; LDA $A2            ; Current low byte
+   ; CMP DELAY_LOW      ; Compare with target low byte
+   ; LDA $A3            ; Current high byte
+   ; SBC DELAY_HIGH     ; Subtract target high byte
+   ; BCC .wait          ; If not reached, loop
+
+    ;RTS
+
+fall_animation:
+        LDA #15
+        jsr draw_platform
         
-        ldy #01
-        jmp color_char
+        LDA #$00
+        jsr color_platform
+        
+        jsr jiffy_delay_fast
 
+        LDA #03
+        jsr draw_platform 
 
+        LDA #$00
+        jsr color_platform
+
+        rts
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
 title_sound:
@@ -1562,6 +1664,12 @@ color_platform:
 
 DelayLoop:
         LDX #$FF                  ; Set up outer loop counter
+        jmp DelayLoopX
+
+DelayLoop2:
+        LDX #$09                  ; Set up outer loop counter
+        jmp DelayLoopX
+             
 DelayLoopX:
         LDY #$FF                  ; Set up inner loop counter
 
