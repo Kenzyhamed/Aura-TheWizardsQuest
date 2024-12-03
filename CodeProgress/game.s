@@ -47,6 +47,8 @@ CHAR_RIGHT_LOCATION = #$1C60
 HAT_FALLING_LEFT_LOCATION = $1c68
 HAT_FALLING_RIGHT_LOCATION = $1c70
 HAT_FALLING_LOCATION = $1c78
+FIRST_PORTAL_LOCATION = $1c80
+SECOND_PORTAL_LOCATION = $1c88
 
 ; addresses to store counts/variables
 COUNT_FOR_LOOP = $0003
@@ -279,6 +281,26 @@ HAT_FALLING:
         dc.b %01111110
         dc.b %11111111
 
+FIRST_PORTAL:
+        dc.b %00000000
+        dc.b %00001000
+        dc.b %00011100
+        dc.b %00100010
+        dc.b %01000001
+        dc.b %01000010
+        dc.b %00011100
+        dc.b %00001000
+
+SECOND_PORTAL:
+        dc.b %00000000
+        dc.b %00001000
+        dc.b %00011100
+        dc.b %00100010
+        dc.b %01000001
+        dc.b %01000010
+        dc.b %00011100
+        dc.b %00001000
+
 LEVEL_OFFSETS:
     .byte #00, #02, #04       ; Offsets for levels 2, 3, and 4
 
@@ -286,16 +308,22 @@ LEVEL_OFFSETS:
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_1:
-    .byte  $44, $1E, $07, $FF
+    .byte  $44, $1E, $09, $FF
 
 START_ADDRESS_DANGER_PLATFORM_LVL_1:
     .byte  $38, $1F, $11, $ff
 
-SPAWN_ADDRESS:
+SPAWN_ADDRESS_LVL_1:
     .byte $30, $1E ; Low byte ($20), High byte ($1E)
 
-GEM_ADDRESS:
-        .byte $D1, $1F, $D0, $1F, $E0, $1F, $ff
+FIRST_PORTAL_LVL_1:
+    .byte $34, $1E ; Low byte ($20), High byte ($1E)
+
+SECOND_PORTAL_LVL_1:
+    .byte $D7, $1F ; Low byte ($20), High byte ($1E)
+
+GEM_ADDRESS_LVL_1:
+        .byte $DF, $1F, $E1, $1F, $E0, $1F, $ff
 
 DOOR_ADDRESS:
         .byte $CC, $1F, $ff
@@ -324,7 +352,13 @@ SPAWN_ADDRESS_LVL_2:
 
 
 GEM_ADDRESS_LVL_2:
-        .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
+        .byte $11, $1E, $D9, $1E, $D7, $1F, $ff
+
+FIRST_PORTAL_LVL_2:
+    .byte $2D, $1F ; Low byte ($20), High byte ($1E)
+
+SECOND_PORTAL_LVL_2:
+    .byte $D7, $1F ; Low byte ($20), High byte ($1E)
 
 ;--------------------------------------- LEVEL 3 DATA ---------------------------
 
@@ -336,10 +370,10 @@ START_ADDRESS_DANGER_PLATFORM_LVL_3:
     .byte  $67, $1E, $07, $87, $1F, $02, $ff 
 
 SPAWN_ADDRESS_LVL_3:
-    .byte $20, $1E ; Low byte ($20), High byte ($1E)
+    .byte $20, $1F ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_3:
-        .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
+        .byte $11, $1E, $C0, $1F, $10, $1F, $ff
 
 
 ;--------------------------------------- LEVEL 4 DATA ---------------------------
@@ -350,6 +384,12 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_4:
 
 START_ADDRESS_DANGER_PLATFORM_LVL_4:
     .byte  $67, $1F, $07, $87, $1F, $02, $ff 
+
+SPAWN_ADDRESS_LVL_4:
+    .byte $30, $1E ; Low byte ($20), High byte ($1E)
+
+GEM_ADDRESS_LVL_4:
+        .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
 
 
 START_ADDRESS_NORMAL_PLATFORM_TABLE:
@@ -364,6 +404,25 @@ START_ADDRESS_DANGER_PLATFORM_TABLE:
     .word START_ADDRESS_DANGER_PLATFORM_LVL_3
     .word START_ADDRESS_DANGER_PLATFORM_LVL_4
 
+SPAWN_ADDRESS_TABLE:
+    .word SPAWN_ADDRESS_LVL_1
+    .word SPAWN_ADDRESS_LVL_2
+    .word SPAWN_ADDRESS_LVL_3
+    .word SPAWN_ADDRESS_LVL_4
+
+GEM_ADDRESS_TABLE:
+    .word GEM_ADDRESS_LVL_1
+    .word GEM_ADDRESS_LVL_2
+    .word GEM_ADDRESS_LVL_3
+    .word GEM_ADDRESS_LVL_4
+
+FIRST_PORTAL_TABLE:
+    .word FIRST_PORTAL_LVL_1
+    .word FIRST_PORTAL_LVL_2
+
+SECOND_PORTAL_TABLE:
+    .word SECOND_PORTAL_LVL_1
+    .word SECOND_PORTAL_LVL_2
 
 
 ; our program starts here
@@ -508,8 +567,22 @@ copy_HAT_FALLING_data:
         inx                    
         cpx #8                  
         bne copy_HAT_FALLING_data       
+        ldx #0
 
-        ; copy PLATFORM data to $1c08
+copy_FIRST_PORTAL_data:
+        lda FIRST_PORTAL,x              
+        sta FIRST_PORTAL_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_FIRST_PORTAL_data       
+        ldx #0
+
+copy_SECOND_PORTAL_data:
+        lda SECOND_PORTAL,x              
+        sta SECOND_PORTAL_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_SECOND_PORTAL_data       
         ldx #0
 
 ; -----------------------------------  TITLE SCREEN CODE -----------------------------------
@@ -876,38 +949,51 @@ goto_check_platform:
         LDA PLATFORM_CHAR
         CMP #$01
         BEQ jmp_to_start_printing_platforms_after_02
-        LDA PLATFORM_CHAR
         CMP #$02
         BEQ goto_print_gem
 
 jmp_to_start_printing_platforms_after_02:
         LDY #$00
         LDA #$02
-        STA PLATFORM_CHAR,y
+        STA PLATFORM_CHAR
         jmp start_printing_platforms
 
         
 goto_print_gem:
         ldx #$00
-        ldy #$00
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA GEM_ADDRESS_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA GEM_ADDRESS_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page
+
+        ldy #$00  
 
 print_gem:
         ; Load the starting address into A
-        LDA GEM_ADDRESS,x 
+        LDA (ZP_SRC_ADDR_LO),y
         CMP #$FF       
         BEQ goto_color_gem  
         STA SCREEN_POS_LO        
 
-        INX
+        INY
 
         ; Load the high byte of the starting address
-        LDA GEM_ADDRESS,x    
+        LDA (ZP_SRC_ADDR_LO),y    
         STA SCREEN_POS_HI        
 
-        LDA #$04
-        jsr draw_platform
+        TYA
+        TAX
+        LDY #$00
+        LDA #$04                        ; Load color value (modify as needed)
+        JSR draw_platform               ; Apply color to platform
+        TXA
+        TAY
 
-        INX
+        INY
               
         JMP print_gem
 
@@ -917,35 +1003,41 @@ color_is_96_gem:
         jmp continue_color_gem  
 
 goto_color_gem:
-        ldx #$00
+        ldy #$00
 
 color_gem:
         ; Load the starting address into A
-        LDA GEM_ADDRESS,x 
+        LDA (ZP_SRC_ADDR_LO),y  
         CMP #$FF 
         BEQ goto_print_door_top   
         STA COLOR_POS_LO       
         
-        INX            
+        INY            
         
         ; Load the high byte of the starting address
-        LDA GEM_ADDRESS,x
+        LDA (ZP_SRC_ADDR_LO),y 
         CMP #$1E
         BEQ color_is_96_gem               ; Store in high byte register
         LDA #$97
         STA COLOR_POS_HI     
 
 continue_color_gem:
-        LDA #$07
-        jsr color_platform
+        TYA
+        TAX
+        LDY #$00
+        LDA #$07                        ; Load color value (modify as needed)
+        JSR color_platform               ; Apply color to platform
+        TXA
+        TAY
 
-        INX
+        INY
 
         jmp color_gem
 
 
 goto_print_door_top:
-        ldx #$00
+        LDX #$00
+        LDY #$00
 
 print_door_top:
         ; Load the starting address into A
@@ -1020,7 +1112,7 @@ color_door_bottom:
         ; Load the starting address into A
         LDA DOOR_BOTTOM_COLOR_ADDRESS,x 
         CMP #$FF 
-        BEQ char_screen     
+        BEQ spawn_portal     
         STA COLOR_POS_LO       
         
         INX            
@@ -1094,54 +1186,124 @@ increment_gem_counter_hi_right:
 
 	JMP dec_screen_hi_then_draw
 ; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
-; spawning code prints the character at the spawn location
-color_is_96_spawn:
-        LDA #$96
-        STA COLOR_POS_HI
-        jmp continue_color_spawn  
-char_screen:
-; point VIC to use custom character set
-        LDA #$ff                  
-        sta VIC_CHAR_REG 
-
+spawn_portal:
         ldx #$00
+        LDA PLATFORM_CHAR
+        CMP #16
+        BEQ load_second_portal
+        CMP #17
+        BEQ load_spawn
+        
+load_first_portal:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
 
-        LDA SPAWN_ADDRESS,x 
+      ; Load source address from table
+        LDA FIRST_PORTAL_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA FIRST_PORTAL_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
+        LDA #$06
+        STA PLATFORM_COLOR
+        LDA #16
+        STA PLATFORM_CHAR,y
+        jmp char_screen
+
+load_second_portal:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA SECOND_PORTAL_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA SECOND_PORTAL_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
+        LDA #$06
+        STA PLATFORM_COLOR
+        LDA #17
+        STA PLATFORM_CHAR
+        jmp char_screen
+
+load_spawn:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA SPAWN_ADDRESS_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA SPAWN_ADDRESS_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
+        LDA #$00
+        STA PLATFORM_COLOR
+        LDA #$00
+        STA PLATFORM_CHAR
+        jmp char_screen
+
+char_screen:
+        LDA (ZP_SRC_ADDR_LO),y
         STA COLOR_POS_LO        
 
-        INX     
+        INY    
         
         ; Load the high byte of the starting address
-        LDA SPAWN_ADDRESS,x   
+        LDA (ZP_SRC_ADDR_LO),y   
         CMP #$1E
         BEQ color_is_96_spawn               ; Store in high byte register
         LDA #$97
         STA COLOR_POS_HI  
 
 continue_color_spawn:
-        LDA #$00
+        TYA
+        TAX
+        LDY #$00
+        LDA PLATFORM_COLOR
         jsr color_platform
-        ldx #$00
+        TXA
+        TAY
+        
+        ldy #$00
 
         ; Load the starting address into A
-        LDA SPAWN_ADDRESS,x       
+        LDA (ZP_SRC_ADDR_LO),y       
         STA SCREEN_POS_LO        
       
-        INX
+        INY
 
         ; Load the high byte of the starting address
-        LDA SPAWN_ADDRESS,x    
+        LDA (ZP_SRC_ADDR_LO),y    
         STA SCREEN_POS_HI        
 
-        LDA #$00
-        jsr draw_platform
+        TYA
+        TAX
+        LDY #$00
+        LDA PLATFORM_CHAR                       ; Set platform identifier (or color)
+        JSR draw_platform               ; Call subroutine to draw the platform
+        TXA
+        TAY
 
+        LDA PLATFORM_CHAR
+        CMP #$00
+        BNE goto_spawn_portal
 
       	LDA #$05
 	STA GEMS_COLLECTED
 
         LDX #$00
+        LDY #$00
         jmp loop
+; spawning code prints the character at the spawn location
+color_is_96_spawn:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_spawn 
+goto_spawn_portal:
+        jmp spawn_portal
 
 ; --------------------------------------------- DOOR TO NEXT LEVEL CODE ---------------------------------------------------
 return:
@@ -1217,7 +1379,11 @@ decremented_screen_hi:
         cmp #$03 
         beq inc_screen_hi_then_draw
         cmp #$20 
-        beq inc_screen_hi_then_draw
+        beq inc_screen_hi_then_draw       
+        cmp #16 
+        beq goto_inc_lo_then_first_portal_hit
+        cmp #17
+        beq goto_inc_lo_then_second_portal_hit
 
         inc SCREEN_POS_LO
         inc SCREEN_POS_HI
@@ -1237,12 +1403,34 @@ skip_decrement_screen_hi:
         cmp #$03 
         beq continue_drawing_left
         cmp #$20 
-        beq continue_drawing_left
+        beq continue_drawing_left       
+        cmp #16 
+        beq goto_inc_lo_then_first_portal_hit
+        cmp #17
+        beq goto_inc_lo_then_second_portal_hit
 
         inc SCREEN_POS_LO
         
         jmp loop
-        
+
+goto_inc_lo_then_first_portal_hit:
+        inc SCREEN_POS_LO
+        jmp first_portal_hit
+
+goto_inc_lo_hi_then_first_portal_hit:
+        inc SCREEN_POS_LO
+        inc SCREEN_POS_HI
+        jmp first_portal_hit
+
+goto_inc_lo_then_second_portal_hit:
+        inc SCREEN_POS_LO
+        jmp second_portal_hit
+
+goto_inc_lo_hi_then_second_portal_hit:
+        inc SCREEN_POS_LO
+        inc SCREEN_POS_HI
+        jmp second_portal_hit  
+
 continue_drawing_left:
         inc SCREEN_POS_LO
         lda #03 ; blank platform
@@ -1264,6 +1452,10 @@ incremented_screen_hi:
         beq dec_screen_hi_then_draw
         cmp #$20 
         beq dec_screen_hi_then_draw
+        cmp #16 
+        beq goto_dec_lo_hi_then_first_portal_hit
+        cmp #17 
+        beq goto_dec_lo_hi_then_second_portal_hit
 
         dec SCREEN_POS_LO
         dec SCREEN_POS_HI
@@ -1311,10 +1503,32 @@ skip_increment_screen_hi:
         beq continue_drawing_right
         cmp #$20 
         beq continue_drawing_right
+        cmp #16 
+        beq goto_dec_lo_then_first_portal_hit
+        cmp #17
+        beq goto_dec_lo_then_second_portal_hit
 
         dec SCREEN_POS_LO
         
         jmp loop
+
+goto_dec_lo_then_first_portal_hit:
+        dec SCREEN_POS_LO
+        jmp first_portal_hit
+
+goto_dec_lo_hi_then_first_portal_hit:
+        dec SCREEN_POS_LO
+        dec SCREEN_POS_HI
+        jmp first_portal_hit
+
+goto_dec_lo_then_second_portal_hit:
+        dec SCREEN_POS_LO
+        jmp second_portal_hit
+
+goto_dec_lo_hi_then_second_portal_hit:
+        dec SCREEN_POS_LO
+        dec SCREEN_POS_HI
+        jmp second_portal_hit
 
 continue_drawing_right:
         dec SCREEN_POS_LO
@@ -1535,6 +1749,72 @@ fall_animation:
 
         rts
 
+first_portal_hit:
+        LDA #$03
+        jsr draw_platform
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA SECOND_PORTAL_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA SECOND_PORTAL_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+        LDY #$00
+        jmp draw_char_after_portal_hit
+
+second_portal_hit:
+        LDA #$03
+        jsr draw_platform
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA FIRST_PORTAL_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA FIRST_PORTAL_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+        LDY #$00
+        jmp draw_char_after_portal_hit
+
+draw_char_after_portal_hit:
+
+        LDA (ZP_SRC_ADDR_LO),y
+        STA COLOR_POS_LO        
+        inc COLOR_POS_LO
+        INY    
+        
+        ; Load the high byte of the starting address
+        LDA (ZP_SRC_ADDR_LO),y   
+        CMP #$1E
+        BEQ color_is_96_first_portal               ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI  
+
+continue_color_first_portal:
+        ldy #$00
+
+        ; Load the starting address into A
+        LDA (ZP_SRC_ADDR_LO),y       
+        STA SCREEN_POS_LO        
+        inc SCREEN_POS_LO
+        INY
+
+        ; Load the high byte of the starting address
+        LDA (ZP_SRC_ADDR_LO),y    
+        STA SCREEN_POS_HI        
+
+        LDX #$00
+        LDY #$00
+        jmp no_high_increment_right
+        ;jmp loop
+; spawning code prints the character at the spawn location
+color_is_96_first_portal:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_first_portal
+
+
 ; ---------------------------- SOUND EFFECTS ----------------------------
 title_sound:
         ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
@@ -1704,4 +1984,3 @@ load_new_level:
     LDA #$01
     STA PLATFORM_CHAR
     jmp start_level
-
