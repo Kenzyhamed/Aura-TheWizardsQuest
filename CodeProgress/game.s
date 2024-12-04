@@ -6,15 +6,11 @@
 CHROUT = $ffd2  
 CLRCHN = $ffcc
 HOME = $ffba
-GETIN = $FFE4      
+GETIN = $FFE4   
 
 ; Define boundaries for screen position high byte
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
 SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
-
-; Variables for delay storage
-DELAY_LOW   = $FC  ; Temporary storage for low byte of delay
-DELAY_HIGH  = $FD  ; Temporary storage for high byte of delay
 
 JUMP_COUNTER = $0230         ; Tracks how high the character has jumped-X
 JUMPRU_COUNTER=$0250
@@ -727,6 +723,8 @@ use_next_color_memory:
 ; ----------------------------------- WAITING FOR A TO PLAY THE GAME -----------------------------------
 
 wait_for_input:
+        JSR title_sound
+
         LDA #$00
         STA LEVEL_COUNTER
 
@@ -737,7 +735,6 @@ wait_for_input:
         STA PLATFORM_COLOR
 
         JSR GETIN
-        JSR title_sound
 
         CMP #'A
         BEQ start_level
@@ -748,7 +745,7 @@ wait_for_input:
 ; ----------------------------------- SCREEN CLEAR AFTER INPUT ON TITLE SCREEN -----------------------------------
 
 start_level:
-        JSR sound_off
+        JSR volume_off
 
 	lda #$93
 	jsr CHROUT	                ; Clear the screen
@@ -1079,7 +1076,7 @@ increment_gem_counter_left:
 	STX GEMS_COLLECTED
 
         ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
-        ;JSR sound_collect_gem 
+        JSR sound_collect_gem 
 
 	JMP continue_drawing_left
         
@@ -1087,7 +1084,7 @@ increment_gem_counter_hi_left:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        ;JSR sound_collect_gem
+        JSR sound_collect_gem
 
 	JMP inc_screen_hi_then_draw
 
@@ -1105,7 +1102,7 @@ increment_gem_counter_right:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-       ; JSR sound_collect_gem
+        JSR sound_collect_gem
 
 	JMP continue_drawing_right
         
@@ -1115,7 +1112,7 @@ increment_gem_counter_hi_right:
         INX
 	STX GEMS_COLLECTED
 
-        ;JSR sound_collect_gem
+        JSR sound_collect_gem
 
 	JMP dec_screen_hi_then_draw
 ; --------------------------------------------- SPAWNING PORTAL DOOR CODE ---------------------------------------------------
@@ -1821,119 +1818,116 @@ goto_dec_screen_pos:
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
 title_sound:
-        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
-        ;LDA #$05        ; want to set volume to 5
-        ;STA $900E       ; memory location for setting volumne
+	jsr set_volume
 
-	;JSR e_note
-        ;JSR delay_sound  
-        ;JSR sound_off
+        jsr play_f_highest_octave
+        jsr speakers_off
 
-	;JSR g_note
-        ;JSR delay_sound  
-        ;JSR sound_off
+        jsr play_f_highest_octave
+        JSR triple_delay_speakers_off
 
-	;JSR d_note
-        ;JSR delay_sound  
-        ;JSR sound_off
+        jsr play_b_highest_octave
+        jsr speakers_off
+
+        jsr play_f_highest_octave
+        JSR double_triple_delay
+        jsr speakers_off
+
+        jsr play_b_highest_octave
+        JSR double_triple_delay
+        JSR triple_delay_speakers_off
+
+        jsr play_f_highest_octave
+        JSR triple_delay_speakers_off
+
+        jsr play_b_highest_octave
+        jsr speakers_off
+
+        JSR triple_delay
 
         RTS
+
+sound_portal:
+        jsr set_volume
+
+        LDA #$F0       ; wb #241
+        STA $900D      
+
+        ; TODO: do we want to turn the sound off once weve travelled thru to the other side?
+        jsr speakers_off
+        jsr volume_off
+
+	RTS
+
 
 sound_dead:	
-        LDA #$05 	; want to set volume to 5
-        STA $900E	; memory location for setting volumne
+        jsr set_volume
 
-	;LDA #'D
-	;JSR CHROUT
+	JSR play_c_note_low_octave
+     	JSR play_d_note_low_octave
+        JSR play_c_note_low_octave
 
-	JSR c_note
-   	
-     	JSR d_note
-	
-	;JSR c_note
-	
-	;JSR d_note
-	
-	JMP sound_off
+        jsr volume_off
+        RTS
 
 sound_collect_gem:
-        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
-
-	LDA #$05
-	STA $900E       ; memory location for setting volumne
-
-	LDA #$D7       
-        STA $900B 
-	LDA #$EE       
-        STA $900C      ; Store the value in memory address 36874 ($90B in hex)
-        JSR delay_sound
-        JSR delay_sound
-	
-	LDA #$00
+        jsr set_volume
+        ; Play C#
+        LDA #241
         STA $900C
-	STA $900B
+        jsr speakers_off
+        jsr volume_off
+        rts
 
-        JMP sound_off
+play_f_highest_octave:
+        LDA #163
+        STA $900C       
+        RTS
 
-c_note:
+play_b_highest_octave:
+        LDA #191
+        STA $900C 
+        RTS
+
+play_c_note_low_octave:
 	LDA #$87        
-        STA $900A       ; Store the value in memory address 36874 ($90B in hex)
-	JSR delay_sound
-	
-	LDA #$00
-        STA $900A
-	
+        STA $900A   
+
+        JSR speakers_off
 	RTS
 
-d_note:
+; TODO: if we dont use this anywhere else then we can put it into the sound_dead method
+play_d_note_low_octave:
 	LDA #$93
         STA $900A
-	JSR DelayLoop
+	JSR speakers_off
+	RTS
+
+set_volume:
+        LDA #10
+        STA $900E       
+        RTS
+
+triple_delay_speakers_off:
+        JSR triple_delay
+        jsr speakers_off
+        rts
+
+volume_off:
+	LDA #$00
+        STA $900E
+	
+	RTS
+
+speakers_off:
+        JSR triple_delay
 
 	LDA #$00
         STA $900A
-
-	RTS
-
-e_note:
-        LDA #$9F      
         STA $900C
-        JSR loop
+        STA $900D
 
-        LDA #$00
-        STA $900C
-
-        RTS
-
-g_note:
-        LDA #$EB       ; Load the value 135 (87 in hex) into the A register
-        STA $900C
-        JSR loop
-
-        LDA #$00
-        STA $900C
-
-        RTS
-
-delay_sound:
- ; increment the counter
-	LDA SOUND_COUNTER
-        INC SOUND_COUNTER
-
-        CMP #$02	
-	BNE delay_sound
-
-	LDA SOUND_LOOP_COUNT       ; Load LOOP_COUNT
-	INC SOUND_LOOP_COUNT       ; Increment LOOP_COUNT
-	
-	CMP #$01             ; Compare LOOP_COUNT with 1
-	BNE delay_sound        ; If LOOP_COUNT isn't 1, loop again
-
-	RTS
-
-sound_off:
-	LDA #$00
-        STA $900E
+        JSR triple_delay
 	
 	RTS
 ; ---------------------------- DRAW AND COLOR CODE BEING USED AT A FEW PLACES ----------------------------
@@ -1945,6 +1939,17 @@ draw_platform:
 color_platform:
         STA (COLOR_POS_LO),y    
         rts
+
+triple_delay:
+        JSR DelayLoop2
+        JSR DelayLoop2
+        JSR DelayLoop2
+        RTS
+
+double_triple_delay:
+        JSR triple_delay
+        JSR triple_delay
+        RTS
 
 DelayLoop:
         LDX #$FF                  ; Set up outer loop counter
