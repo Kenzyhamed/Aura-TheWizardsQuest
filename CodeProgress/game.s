@@ -27,6 +27,7 @@ VIC_CHAR_REG = $9005
 BORDER_CHAR = 18
 ;BORDER_CHAR = 18
 
+
 ; these are the addresses for our custom character set
 CHAR_LOCATION = $1C00
 NORAML_PLATFORM_LOCATION = $1C08
@@ -352,9 +353,6 @@ BRICK:
        ; dc.b %00100100
        ; dc.b %00100100
 
-LEVEL_OFFSETS:
-    .byte #00, #02, #04       ; Offsets for levels 2, 3, and 4
-
 ;--------------------------------------- LEVEL 1 DATA ---------------------------
 
 ; Define the starting address in an array
@@ -374,7 +372,7 @@ SECOND_PORTAL_LVL_1:
     .byte $fe ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_1:
-        .byte $26, $1F, $DF, $1F, $E0, $1F, $ff
+        .byte $1F, $1F, $CF, $1F, $D0, $1F, $ff
 
 DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
@@ -474,6 +472,12 @@ DOOR_TOP_TABLE:
 
 DOOR_BOTTOM_TABLE:
     .word DOOR_BOTTOM_ADDRESS
+
+DATA_TABLE:
+    .word CHAR
+
+LOCATION_TABLE:
+    .word CHAR_LOCATION
 
 
 ; our program starts here
@@ -1111,7 +1115,7 @@ increment_gem_counter_left:
 	STX GEMS_COLLECTED
 
         ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
-        JSR sound_collect_gem 
+        JSR sound_collect_gem_with_delay 
 
 	JMP continue_drawing_left
         
@@ -1119,7 +1123,7 @@ increment_gem_counter_hi_left:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        JSR sound_collect_gem
+        JSR sound_collect_gem_with_delay
 
 	JMP inc_screen_hi_then_draw
 
@@ -1137,7 +1141,7 @@ increment_gem_counter_right:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        JSR sound_collect_gem
+        JSR sound_collect_gem_with_delay
 
 	JMP continue_drawing_right
         
@@ -1147,7 +1151,7 @@ increment_gem_counter_hi_right:
         INX
 	STX GEMS_COLLECTED
 
-        JSR sound_collect_gem
+        JSR sound_collect_gem_with_delay
 
 	JMP dec_screen_hi_then_draw
 ; --------------------------------------------- SPAWNING PORTAL DOOR CODE ---------------------------------------------------
@@ -1585,15 +1589,20 @@ check_under_right:
         jmp check_under_no_carry_right
 
 goto_increment_gem_then_continue_right_fall:
+        LDA #15
+        jsr draw_platform
+        LDA #00
+        jsr color_platform
+        jsr sound_collect_gem
         TXA
         LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED  
         TAX
-        JSR sound_collect_gem 
         jmp continue_check_under_no_carry_right
 
 check_under_no_carry_right:
+        jsr volume_off_all
         ldy #00
         ; Check if moving down is valid
         LDA (SCREEN_POS_LO),y ; Load the value at the new position
@@ -1628,10 +1637,9 @@ cannot_move_down_right:
 bounce_animation:
         jsr handle_load_bounce_hat 
         jsr draw_platform
-        
         LDA #$00
         jsr color_platform
-        
+
         jsr jiffy_delay_fast
         jsr jiffy_delay_fast
 
@@ -1639,6 +1647,9 @@ bounce_animation:
         jsr draw_platform 
         
         jmp loop
+
+turn_sound_off:
+        jsr volume_off_all
 
 handle_load_bounce_hat:
         lda DIRECTION
@@ -1701,15 +1712,16 @@ goto_start_level_after_dying:
         jmp start_level
 
 goto_increment_gem_then_continue_left_fall:
+        jsr sound_collect_gem
         TXA
         LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED  
         TAX
-        JSR sound_collect_gem 
         jmp continue_check_under_no_carry_left
 
 check_under_no_carry_left:
+        jsr volume_off_all
         inx
         ldy #00
         ; Check if moving down is valid
@@ -1767,7 +1779,7 @@ fall_animation:
         
         LDA #$00
         jsr color_platform
-        
+
         jsr jiffy_delay_fast
 
         LDA #03
@@ -1777,6 +1789,7 @@ fall_animation:
         jsr color_platform
 
         rts
+
 
 first_portal_hit:
         LDA #$03
@@ -1935,6 +1948,11 @@ sound_collect_gem:
         ; Play C#
         LDA #241
         STA $900C
+
+        rts
+
+sound_collect_gem_with_delay:
+        jsr sound_collect_gem
         jsr speakers_off
         jsr volume_off
         rts
@@ -1977,6 +1995,14 @@ volume_off:
 	LDA #$00
         STA $900E
 	
+	RTS
+
+volume_off_all:
+	jsr volume_off
+        STA $900A
+        STA $900C
+        STA $900D
+
 	RTS
 
 speakers_off:
