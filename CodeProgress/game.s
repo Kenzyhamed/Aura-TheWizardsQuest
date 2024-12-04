@@ -529,8 +529,6 @@ copy_data:
 
 title_screen:
         LDX #0  
-        LDY #0                          ; Initialize index to read msg    
-                                ; Initialize index to read msg    
 print_section_one:
         lda #$90
         JSR CHROUT ;Print character
@@ -580,55 +578,57 @@ start_level:
 
         LDA #$01
 	STA SOUND_COUNTER
+        
 	LDA #$00                        ; Initialize LOOP_COUNT to 0
 	STA SOUND_LOOP_COUNT
 
-; --------------------------------------------- BORDER CODE ---------------------------------------------------
-; TODO: some of the border code is repetitive. we can make this a subroutine. 
-; Set up the top border                     ; Character to represent the border
         LDA #$ff                        ; Load low byte (0xF5)
         sta VIC_CHAR_REG 
         
+; --------------------------------------------- BORDER CODE ---------------------------------------------------
+; Set up the top border                     ; Character to represent the border
         ldx #SCREEN_WIDTH               ; Number of characters to print
         ldy #0  
 
-draw_top_border:
-    	lda #BORDER_CHAR  
-    	sta SCREEN_START,y              ; Store at the location
-	lda #BORDER_COLOR    	                ; Black color for the memory address
-	sta COLOR_MEM,y
-    	iny                             ; Increment Y to move to the next screen position
-    	dex                             ; Decrement X (count down the number of characters)
-    	bne draw_top_border             ; Check if the x is 0
-	
-;Draw the side borders
-        ldx #SCREEN_HEIGHT-1            ; Number of visible rows (23 rows for VIC-20)
-	lda #<SCREEN_START              ; Load the low byte of the screen start address
+        lda #<SCREEN_START              ; Load the low byte of the screen start address
         sta SCREEN_POS_LO       
         lda #>SCREEN_START              ; Load the high byte of the screen start address
         sta SCREEN_POS_HI       
 	lda #<COLOR_MEM               ; Load the low byte of the color start address
         sta COLOR_POS_LO        
         lda #>COLOR_MEM               ; Load the high byte of the color start address
-        sta COLOR_POS_HI        
+        sta COLOR_POS_HI     
+        jmp draw_top_border
+
+load_and_color_border:
+        lda #BORDER_CHAR          ; Load the border character
+        sta (SCREEN_POS_LO),y     ; Store the character at the current screen position (using Y as the offset)
+
+        lda #BORDER_COLOR         ; Load the border color code
+        sta (COLOR_POS_LO),y      ; Store the color at the current color memory position
+
+        rts
+        
+draw_top_border:
+    	 ; Now draw the border
+        jsr load_and_color_border
+ 
+    	iny                             ; Increment Y to move to the next screen position
+    	dex                             ; Decrement X (count down the number of characters)
+    	bne draw_top_border             ; Check if the x is 0
+
+        ; need this to print bottom border
+        ldx #SCREEN_HEIGHT-1            ; Number of visible rows (23 rows for VIC-20)
+        
 ;Loop to draw the side borders
 draw_side_borders:
-    	
-	lda #BORDER_CHAR                        ; Character to represent the side border
-	
     	; Draw the left border at the start of the row
 	ldy #0
-	sta (SCREEN_POS_LO),y           ; Store border character at the leftmost column
-        lda #BORDER_COLOR                     ; Set color to black
-        sta (COLOR_POS_LO),y            ; Store color at the 
+	jsr load_and_color_border
 
-        lda #BORDER_CHAR                        ; Character to represent the side border
-    	
 	; Draw the right border, offset by 21 visible columns 
         ldy #SCREEN_WIDTH-1             ; Set Y to 21 which is the last right column
-        sta (SCREEN_POS_LO),y           ; Store border character 
-        lda #BORDER_COLOR                        ; Set color to black
-        sta (COLOR_POS_LO),y            ; Store color 
+        jsr load_and_color_border
 
     	; Increment the screen position by SCREEN_WIDTH so we can go to the next row
         clc                             ; Clear carry for addition
@@ -653,20 +653,15 @@ skip_color_high_inc:
 
 ; Draw the bottom border
 draw_bottom_border:
-        lda #BORDER_CHAR                        ; Character to represent the border
         ldx #SCREEN_WIDTH               ; Number of characters to print in the bottom row
         ldy #0                          ; Start from the leftmost column of the last row
 
 draw_bottom_loop:
-	lda #BORDER_CHAR
-        sta (SCREEN_POS_LO),y           ; Store the border character in each column
-        lda #BORDER_COLOR                    ; Set color to black
-        sta (COLOR_POS_LO),y            ; Store color in the same column
+	jsr load_and_color_border
 
         iny                             ; Increment Y to move to the next column
         dex                             ; Decrement the X counter
-        bne draw_bottom_loop            ; Continue until X = 0`
-
+        bne draw_bottom_loop            ; Continue until X = 0
 
 ; --------------------------------------------- PLATFORM PRINTING CODE ---------------------------------------------------
 
