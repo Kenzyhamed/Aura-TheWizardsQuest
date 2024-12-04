@@ -758,7 +758,7 @@ print_platform:
         TAX
         LDY #$00
         LDA DATA_CHAR                        ; Set platform identifier (or color)
-        JSR draw_platform               ; Call subroutine to draw the platform
+        STA (SCREEN_POS_LO),y                ; Call subroutine to draw the platform
         TXA
         TAY
 
@@ -807,7 +807,7 @@ color_platform_loop:
         TAX
         LDY #$00
         LDA DATA_COLOR                         ; Load color value (modify as needed)
-        JSR color_platform               ; Apply color to platform
+        STA (COLOR_POS_LO),y               ; Apply color to platform
         TXA
         TAY
         
@@ -877,7 +877,7 @@ print_gem:
         TAX
         LDY #$00
         LDA #GEM_CHAR                    
-        JSR draw_platform               
+        STA (SCREEN_POS_LO),y                
         TXA
         TAY
 
@@ -914,7 +914,7 @@ continue_color_gem:
         TAX
         LDY #$00
         LDA #YELLOW     ; Load color value (modify as needed)
-        JSR color_platform               ; Apply color to platform
+        STA (COLOR_POS_LO),y               ; Apply color to platform
         TXA
         TAY
 
@@ -1046,7 +1046,7 @@ char_screen:
 continue_color_spawn:
         LDY #$00
         LDA DATA_COLOR
-        jsr color_platform
+        STA (COLOR_POS_LO),y
        
         ldy #$00
 
@@ -1062,7 +1062,7 @@ continue_color_spawn:
 
         LDY #$00
         LDA DATA_CHAR                       ; Set platform identifier (or color)
-        JSR draw_platform               ; Call subroutine to draw the platform
+        STA (SCREEN_POS_LO),y                ; Call subroutine to draw the platform
 
 
         LDA DATA_CHAR
@@ -1246,7 +1246,7 @@ goto_inc_lo_hi_then_second_portal_hit:
 continue_drawing_left:
         inc SCREEN_POS_LO
         lda #03 ; blank platform
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
 
         lda SCREEN_POS_LO,y
         beq dec_screen_hi_byte  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
@@ -1350,14 +1350,14 @@ continue_drawing_right:
         dec SCREEN_POS_LO
         
         lda #03
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
         inc SCREEN_POS_LO
         BNE no_high_increment_right  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
 
         ; If carry is set, increment the high byte
         INC SCREEN_POS_HI
         lda #12
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
 
         ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
         LDA SCREEN_POS_HI          ; Load the high byte of the screen position
@@ -1367,7 +1367,7 @@ continue_drawing_right:
         BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
 
         lda #HAT_COLOR
-        jsr color_platform
+        STA (COLOR_POS_LO),y
 
         JMP loop
 
@@ -1398,9 +1398,9 @@ check_under_right:
 
 goto_increment_gem_then_continue_right_fall:
         LDA #15
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
         LDA #00
-        jsr color_platform
+        STA (COLOR_POS_LO),y
         jsr sound_collect_gem
         TXA
         LDX GEMS_COLLECTED
@@ -1444,16 +1444,16 @@ cannot_move_down_right:
 
 bounce_animation:
         jsr handle_load_bounce_hat 
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
         
         LDA #HAT_COLOR
-        jsr color_platform
+        STA (COLOR_POS_LO),y
 
         jsr jiffy_delay_fast
         jsr jiffy_delay_fast
 
         jsr handle_load_hat
-        jsr draw_platform 
+        STA (SCREEN_POS_LO),y  
         
         jmp loop
 
@@ -1507,10 +1507,10 @@ char_died:
         STA COLOR_POS_LO    ; Store the result back into SCREEN_POS_LO
 
         LDA #$09                    ; Load the character code for the blank platform
-        jsr draw_platform          ; Draw the blank character at the reverted position
+        STA (SCREEN_POS_LO),y           ; Draw the blank character at the reverted position
         
         LDA #HAT_COLOR
-        jsr color_platform          
+        STA (COLOR_POS_LO),y          
 
         jmp goto_start_level_after_dying
 
@@ -1584,25 +1584,25 @@ jiffy_delay_fast:
 
 fall_animation:
         LDA #15
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
         
         LDA #HAT_COLOR
-        jsr color_platform
+        STA (COLOR_POS_LO),y
 
         jsr jiffy_delay_fast
 
         LDA #03
-        jsr draw_platform 
+        STA (SCREEN_POS_LO),y  
 
         LDA #HAT_COLOR
-        jsr color_platform
+        STA (COLOR_POS_LO),y
 
         rts
 
 
 first_portal_hit:
         LDA #$03
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
 
         jsr goto_load_second_portal
         ldx #$01
@@ -1610,7 +1610,7 @@ first_portal_hit:
 
 second_portal_hit:
         LDA #$03
-        jsr draw_platform
+        STA (SCREEN_POS_LO),y 
         jsr goto_load_first_portal
         ldx #$00
         jmp draw_char_after_portal_hit 
@@ -1826,15 +1826,6 @@ speakers_off:
 	
 	RTS
 ; ---------------------------- DRAW AND COLOR CODE BEING USED AT A FEW PLACES ----------------------------
-
-draw_platform:
-        STA (SCREEN_POS_LO),y    
-        rts
-
-color_platform:
-        STA (COLOR_POS_LO),y    
-        rts
-
 triple_delay:
         JSR DelayLoop2
         JSR DelayLoop2
