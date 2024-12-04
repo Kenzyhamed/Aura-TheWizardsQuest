@@ -25,8 +25,8 @@ NEXT_COLOR_MEM = $96FF
 VIC_CHAR_REG = $9005
 
 BORDER_CHAR = 18
-;BORDER_CHAR = 18
-
+BORDER_COLOR = 4
+HAT_COLOR = 0
 
 ; these are the addresses for our custom character set
 CHAR_LOCATION = $1C00
@@ -809,7 +809,7 @@ start_level:
 draw_top_border:
     	lda #BORDER_CHAR  
     	sta SCREEN_START,y              ; Store at the location
-	lda #$00    	                ; Black color for the memory address
+	lda #BORDER_COLOR    	                ; Black color for the memory address
 	sta COLOR_MEM,y
     	iny                             ; Increment Y to move to the next screen position
     	dex                             ; Decrement X (count down the number of characters)
@@ -833,7 +833,7 @@ draw_side_borders:
     	; Draw the left border at the start of the row
 	ldy #0
 	sta (SCREEN_POS_LO),y           ; Store border character at the leftmost column
-        lda #$00                     ; Set color to black
+        lda #BORDER_COLOR                     ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color at the 
 
         lda #BORDER_CHAR                        ; Character to represent the side border
@@ -841,7 +841,7 @@ draw_side_borders:
 	; Draw the right border, offset by 21 visible columns 
         ldy #SCREEN_WIDTH-1             ; Set Y to 21 which is the last right column
         sta (SCREEN_POS_LO),y           ; Store border character 
-        lda #$00                        ; Set color to black
+        lda #BORDER_COLOR                        ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color 
 
     	; Increment the screen position by SCREEN_WIDTH so we can go to the next row
@@ -874,7 +874,7 @@ draw_bottom_border:
 draw_bottom_loop:
 	lda #BORDER_CHAR
         sta (SCREEN_POS_LO),y           ; Store the border character in each column
-        lda #$00                       ; Set color to black
+        lda #BORDER_COLOR                    ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color in the same column
 
         iny                             ; Increment Y to move to the next column
@@ -1256,7 +1256,7 @@ load_spawn:
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
         LDY #$00
-        LDA #$00
+        LDA #HAT_COLOR
         STA PLATFORM_COLOR
         LDA #$00
         STA PLATFORM_CHAR
@@ -1558,7 +1558,7 @@ continue_drawing_right:
         CMP #$1F                   ; Compare with 1F
         BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
 
-        lda #$00
+        lda #HAT_COLOR
         jsr color_platform
 
         JMP loop
@@ -1637,7 +1637,8 @@ cannot_move_down_right:
 bounce_animation:
         jsr handle_load_bounce_hat 
         jsr draw_platform
-        LDA #$00
+        
+        LDA #HAT_COLOR
         jsr color_platform
 
         jsr jiffy_delay_fast
@@ -1700,7 +1701,7 @@ char_died:
         LDA #$09                    ; Load the character code for the blank platform
         jsr draw_platform          ; Draw the blank character at the reverted position
         
-        LDA #$00
+        LDA #HAT_COLOR
         jsr color_platform          
 
         jmp goto_start_level_after_dying
@@ -1777,7 +1778,7 @@ fall_animation:
         LDA #15
         jsr draw_platform
         
-        LDA #$00
+        LDA #HAT_COLOR
         jsr color_platform
 
         jsr jiffy_delay_fast
@@ -1785,7 +1786,7 @@ fall_animation:
         LDA #03
         jsr draw_platform 
 
-        LDA #$00
+        LDA #HAT_COLOR
         jsr color_platform
 
         rts
