@@ -24,7 +24,8 @@ COLOR_MEM = $9600       ;
 NEXT_COLOR_MEM = $96FF
 VIC_CHAR_REG = $9005
 
-BORDER_CHAR = $DF
+BORDER_CHAR = 18
+;BORDER_CHAR = 18
 
 ; these are the addresses for our custom character set
 CHAR_LOCATION = $1C00
@@ -45,6 +46,7 @@ HAT_FALLING_RIGHT_LOCATION = $1c70
 HAT_FALLING_LOCATION = $1c78
 FIRST_PORTAL_LOCATION = $1c80
 SECOND_PORTAL_LOCATION = $1c88
+BRICK_LOCATION = $1c90
 
 ; addresses to store counts/variables
 COUNT_FOR_LOOP = $0003
@@ -296,6 +298,24 @@ SECOND_PORTAL:
         dc.b %01000010
         dc.b %00011100
         dc.b %00001000
+
+BRICK:
+        dc.b %11111110
+        dc.b %00000001
+        dc.b %00000001
+        dc.b %11111110
+        dc.b %01000000
+        dc.b %10000000
+        dc.b %01111111
+        dc.b %10000000
+       ; dc.b %01001001
+       ; dc.b %01001001
+       ; dc.b %11111111
+       ; dc.b %10010010
+       ; dc.b %10010010
+       ; dc.b %11111111
+       ; dc.b %00100100
+       ; dc.b %00100100
 
 LEVEL_OFFSETS:
     .byte #00, #02, #04       ; Offsets for levels 2, 3, and 4
@@ -581,6 +601,14 @@ copy_SECOND_PORTAL_data:
         bne copy_SECOND_PORTAL_data       
         ldx #0
 
+copy_brick_data:
+        lda BRICK,x              
+        sta BRICK_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_brick_data   
+        ldx #0
+
 ; -----------------------------------  TITLE SCREEN CODE -----------------------------------
 
 title_screen:
@@ -721,8 +749,6 @@ start_level:
 
 	lda #$93
 	jsr CHROUT	                ; Clear the screen
-        LDA #$ff                        ; Load low byte (0xF5)
-        sta VIC_CHAR_REG 
 
         LDA #$05                        ; setting the gem counter to zero
 	STA GEMS_COLLECTED
@@ -735,14 +761,14 @@ start_level:
 ; --------------------------------------------- BORDER CODE ---------------------------------------------------
 ; TODO: some of the border code is repetitive. we can make this a subroutine. 
 ; Set up the top border                     ; Character to represent the border
+        LDA #$ff                        ; Load low byte (0xF5)
+        sta VIC_CHAR_REG 
+        
         ldx #SCREEN_WIDTH               ; Number of characters to print
         ldy #0  
-        lda #$DF 
-        sta BORDER_CHAR,y 
 
 draw_top_border:
-
-    	lda BORDER_CHAR  
+    	lda #BORDER_CHAR  
     	sta SCREEN_START,y              ; Store at the location
 	lda #$00    	                ; Black color for the memory address
 	sta COLOR_MEM,y
@@ -763,7 +789,7 @@ draw_top_border:
 ;Loop to draw the side borders
 draw_side_borders:
     	
-	lda BORDER_CHAR                        ; Character to represent the side border
+	lda #BORDER_CHAR                        ; Character to represent the side border
 	
     	; Draw the left border at the start of the row
 	ldy #0
@@ -771,7 +797,7 @@ draw_side_borders:
         lda #$00                     ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color at the 
 
-        lda BORDER_CHAR                        ; Character to represent the side border
+        lda #BORDER_CHAR                        ; Character to represent the side border
     	
 	; Draw the right border, offset by 21 visible columns 
         ldy #SCREEN_WIDTH-1             ; Set Y to 21 which is the last right column
@@ -802,12 +828,12 @@ skip_color_high_inc:
 
 ; Draw the bottom border
 draw_bottom_border:
-        lda BORDER_CHAR                        ; Character to represent the border
+        lda #BORDER_CHAR                        ; Character to represent the border
         ldx #SCREEN_WIDTH               ; Number of characters to print in the bottom row
         ldy #0                          ; Start from the leftmost column of the last row
 
 draw_bottom_loop:
-	lda BORDER_CHAR
+	lda #BORDER_CHAR
         sta (SCREEN_POS_LO),y           ; Store the border character in each column
         lda #$00                       ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color in the same column
@@ -1323,7 +1349,7 @@ goto_load_new_level:
 
 ; this loop waits for the input from the 
 loop:
-        CLC
+        CLC        
         jsr GETIN                    ; Get key input
         beq loop                     ; If no key, continue loop
         cmp #'J                     ; Check if 'J' was pressed (move left)
@@ -1559,7 +1585,7 @@ no_high_increment_right:
 no_high_increment_left:
         LDX #$00
         jmp check_under_left
-
+        
 check_under_right:        
         LDA SCREEN_POS_LO         
         STA TEMP_SCREEN_POS_LO
@@ -1585,7 +1611,7 @@ check_under_no_carry_right:
         BEQ char_died           
         CMP #01                    
         BEQ cannot_move_down_right            
-        CMP BORDER_CHAR                   
+        CMP #BORDER_CHAR                   
         BEQ cannot_move_down_right       
 
         inx
@@ -1688,7 +1714,7 @@ check_under_no_carry_left:
         BEQ char_died      
         CMP #01                    
         BEQ cannot_move_down_left          
-        CMP BORDER_CHAR                   
+        CMP #BORDER_CHAR                   
         BEQ cannot_move_down_left       
 
 
