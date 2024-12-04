@@ -1590,6 +1590,7 @@ goto_increment_gem_then_continue_right_fall:
         INX
 	STX GEMS_COLLECTED  
         TAX
+        JSR sound_collect_gem 
         jmp continue_check_under_no_carry_right
 
 check_under_no_carry_right:
@@ -1705,6 +1706,7 @@ goto_increment_gem_then_continue_left_fall:
         INX
 	STX GEMS_COLLECTED  
         TAX
+        JSR sound_collect_gem 
         jmp continue_check_under_no_carry_left
 
 check_under_no_carry_left:
