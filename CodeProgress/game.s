@@ -6,7 +6,8 @@
 CHROUT = $ffd2  
 CLRCHN = $ffcc
 HOME = $ffba
-GETIN = $FFE4   
+GETIN = $FFE4  
+SCREEN_COLOR_ADDRESS = $900F 
 
 ; Define boundaries for screen position high byte
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
@@ -25,7 +26,7 @@ NEXT_COLOR_MEM = $96FF
 VIC_CHAR_REG = $9005
 
 BORDER_CHAR = 18
-BORDER_COLOR = 4
+BORDER_COLOR = 6
 HAT_COLOR = 0
 
 DATA_START_LOCATION = $1C00
@@ -70,24 +71,11 @@ LOCATION_FOR_DATA_LOAD = $000C
 ; MUTEEBA JAMAL
 ; KENZY HAMED
 ; 2024
+
+; PRESS A TO START GAME
 msg:
-        HEX 41 55 52 41 3A 54 48 45 20 57 49 5A 41 52 44 53 20 51 55 45 53 54 0D 53 48 41 48 5A 49 4C 4C 20 4E 41 56 45 45 44 0A 0D 4D 55 54 45 45 42 41 20 4A 41 4D 41 4C 0A 0D 4B 45 4E 5A 59 20 48 41 4D 45 44 0A 0D 32 30 32 34 0D 00
+        HEX 0d 41 55 52 41 3A 54 48 45 20 57 49 5A 41 52 44 53 20 51 55 45 53 54 0D 53 48 41 48 5A 49 4C 4C 20 4E 41 56 45 45 44 0A 0D 4D 55 54 45 45 42 41 20 4A 41 4D 41 4C 0A 0D 4B 45 4E 5A 59 20 48 41 4D 45 44 0A 0D 32 30 32 34 0D 0D 0D 0D 0D 0D 0D 0D 0D 0D 0D 0D 0D 0D 20 20 20 50 52 45 53 53 20 41 20 54 4F 20 50 4C 41 59 00 ;This is the data for inital text on the screen - Aura the Wizards qust, Muteba Jamal, Shahzill Naveed, Kenzy Hamed
 
-; these are the values for the hat characters that need to be stored in the screen memory
-hatChar: 
-        HEX 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 7A 20 A6 0D 20 A6 0D 20 A6 0D 20 7A 20 A6 20 7A 0D 20 A6 0D 20 A6 20 7A 0D 20 76 0D 20 A6 0D 20 A6 20 7A 0D 20 50 52 45 53 20 41 20 54 4F 20 50 4C 41 59 00 
-
-; this is the number of times the character in hatChar, at the same index, needs to be repeated on the screen
-hatCharCount: 
-        HEX 0A 01 01 02 01 06 03 01 08 05 01 04 01 02 07 01 06 09 01 06 09 01 02 01 02 0B 04 01 01 05 0B 01 05 0B 02 01 01 04 0D 01 03 0F 01 03 0F 02 01 02 03 01 01 01 02 01 01 01 01 01 01 01 01 01 01 01
-
-; these are the coLor values for the titlescreen that need to be stored in the color memory
-colorValues:
-        HEX 00 04 07 04 07 04 07 04 07 04 07 04 07 00 FF
-
-; this is the number of times the color in colorValues, at the same index, needs to be repeated in the color memory
-countValues:
-        HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
 
 CHAR:
         dc.b %00011100
@@ -334,14 +322,21 @@ BRICK:
        ; dc.b %00100100
        ; dc.b %00100100
 
+;--------------------------------------- TITLE_SCREEN_HAT DATA ---------------------------
+
+TITLE_SCREEN_HAT:
+        .byte $8e, $1E, $1, $A3, $1e, $03, $b8, $1e, $05, $cd, $1e, $07, $e2, $1e, $09, $f8, $1e, $08, $00, $1f, $01, $0d, $1f, $0b, $23, $1f, $0b, $39, $1f, $0b, $63, $1f, $0f, $79, $1f, $0f, $ff; 
+
+TITLE_SCREEN_HAT_CROSSES:
+        .byte $4e, $1f, $0D, $ff
 ;--------------------------------------- LEVEL 1 DATA ---------------------------
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_1:
-    .byte  $44, $1E, $06, $FF
+    .byte $44, $1E, $06, $FF
 
 START_ADDRESS_DANGER_PLATFORM_LVL_1:
-    .byte  $ff
+    .byte $74, $1E, $06, $44, $1F, $06, $ff
 
 SPAWN_ADDRESS_LVL_1:
     .byte $30, $1E ; Low byte ($20), High byte ($1E)
@@ -454,6 +449,9 @@ DOOR_TOP_TABLE:
 DOOR_BOTTOM_TABLE:
     .word DOOR_BOTTOM_ADDRESS
 
+TITLE_SCREEN_TABLE:
+    .word TITLE_SCREEN_HAT
+    .word TITLE_SCREEN_HAT_CROSSES
 
 ; these are the addresses for our custom character set
 DATA_TABLE:
@@ -486,6 +484,11 @@ clear_screen:
         JSR CHROUT
         JSR CLRCHN
 
+        ; adjust border and background colour
+        lda SCREEN_COLOR_ADDRESS
+        and #%00001000  
+        ora #%11100000 
+        sta SCREEN_COLOR_ADDRESS
 ; ----------------------------------- COPY CHAR DATA CODE -----------------------------------
         ldx #$00 
         ldy #$00
@@ -528,113 +531,20 @@ title_screen:
         LDX #0  
         LDY #0                          ; Initialize index to read msg    
                                 ; Initialize index to read msg    
-        JMP print_section_one
-
 print_section_one:
-        LDA msg,X ;Load character
-        BEQ reset_x 
+        lda #$90
+        JSR CHROUT ;Print character
 
-        JSR print
+        LDA msg,X ;Load character
+        BEQ goto_load_hat 
+
+        JSR CHROUT ;Print character
+        
+        INX
         JMP print_section_one
 
-reset_x:
-        LDX #-1
-
-increment_x:
-        INX 
-
-char_setup:
-        LDA hatCharCount,X
-        STA COUNT_FOR_LOOP
-
-        LDY #0
-        LDA hatChar,X
-
-print_section_two:
-        BEQ color_screen ;If yes move on to coloring the screen
-
-        JSR CHROUT
-
-        INY 
-        CPY COUNT_FOR_LOOP
-        BEQ increment_x
-        
-        JMP print_section_two
-
-print:
-        JSR CHROUT ;Print character
-	INX
-        RTS
-        
-color_screen:
-        LDX #-1         ; load the index for the color / count we want
-        JMP next_color
-
-color_loop:
-        LDA USE_NEXT_COLOR_MEMORY  ; Check if USE_NEXT_COLOR_MEMORY is set to 01
-        CMP #$01  
-        BEQ higher_color_memory ; If 01, go to higher color memory
-
-        ; default case, lower color memory
-        
-lower_color_memory:
-        LDA COLOR_FOR_LOOP   ; Load the color
-        STA COLOR_MEM,Y      ; Store the color in COLOR_MEM
-
-        ; increment counter
-        JMP increment_counter
-
-
-higher_color_memory:
-        LDA COLOR_FOR_LOOP   
-        STA NEXT_COLOR_MEM,Y 
-
-        ; increment counter
-        JMP increment_counter
-
-increment_counter:
-        INY                  ; Increment Y for next memory location
-        
-        CPY #$FF
-        BEQ use_next_color_memory
-
-        INC COUNTER
-        LDA COUNTER
-
-        CMP COUNT_FOR_LOOP   ; compare counter with count for this color
-        BEQ next_color       ; if counter matches, move to next color
-
-        BNE color_loop
-
-next_color:
-        INX                 ; Move to the next color
-
-        ; Reset the counter
-        LDA #00
-        STA COUNTER
-
-        ; Load the next color and count values
-        LDA countValues,X
-        STA COUNT_FOR_LOOP
-
-        LDA colorValues,X
-        STA COLOR_FOR_LOOP
-
-        CMP #$FF             ; Check if it's the end marker (FF)
-        BEQ wait_for_input         ; Jump to infinite loop if done
-
-        JMP color_loop       ; Continue processing colors
-
-use_next_color_memory:
-        ; Set USE_NEXT_COLOR_MEMORY to 1 to start using NEXT_COLOR_MEM
-        LDA #01
-        STA USE_NEXT_COLOR_MEMORY
-
-        LDY #00
-
-        JMP color_loop       ; Continue with the updated memory
-
-
+goto_load_hat:
+       jmp load_hat     
 ; ----------------------------------- WAITING FOR A TO PLAY THE GAME -----------------------------------
 
 wait_for_input:
@@ -781,6 +691,15 @@ load_normal_platform:
         STA PLATFORM_COLOR
         jmp load_print_platform
 
+load_hat:
+        ldy #0
+        LDA #4
+        STA PLATFORM_COLOR
+
+        LDA #$66
+        STA PLATFORM_CHAR
+        jmp continue_load_title_screen
+
 load_danger_platform:
         LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
         TAY                 ; Transfer the accumulator's value into the Y register
@@ -795,6 +714,22 @@ load_danger_platform:
         LDA #$02
         STA PLATFORM_COLOR
         jmp load_print_platform
+
+load_cross:
+        ldy #2
+        LDA #$7
+        STA PLATFORM_COLOR
+
+        LDA #$56
+        STA PLATFORM_CHAR
+
+continue_load_title_screen:
+        LDA TITLE_SCREEN_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA TITLE_SCREEN_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
 
 load_print_platform:
         LDA (ZP_SRC_ADDR_LO),y
@@ -883,13 +818,25 @@ inc_color_lo_then_draw:
         JMP color_platform_loop
 
 ; Set up for printing danger platforms
+
+jmp_to_load_cross:
+        jmp load_cross
+
+jmp_to_wait_for_input:
+        jmp wait_for_input
+
 goto_check_platform:
         LDA PLATFORM_CHAR
-        CMP #$01
-        BEQ jmp_to_start_printing_platforms_after_02
+        
         CMP #$02
         BEQ goto_print_gem
+        
+        cmp #$66
+        beq jmp_to_load_cross
 
+        cmp #$56
+        beq jmp_to_wait_for_input
+        
 jmp_to_start_printing_platforms_after_02:
         LDY #$00
         LDA #$02
