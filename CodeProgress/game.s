@@ -28,6 +28,14 @@ VIC_CHAR_REG = $9005
 BORDER_CHAR = 18
 BORDER_COLOR = 6
 HAT_COLOR = 0
+PLATFORM_COLOR = 3
+TITLE_HAT_COLOR = 4
+YELLOW = 7
+DANGER_PLATFORM_COLOR =2
+
+TITLE_HAT_CROSSES_CHAR = $56
+TITLE_HAT_CHAR = $66
+GEM_CHAR = $04
 
 DATA_START_LOCATION = $1C00
 
@@ -53,8 +61,8 @@ TEMP_SCREEN_POS_LO   = $04   ; Low byte of screen memory address
 TEMP_SCREEN_POS_HI   = $05   ; High byte of screen memory address
 ZP_SRC_ADDR_LO = $06  ; Zero-page address for low byte
 ZP_SRC_ADDR_HI = $07  ; Zero-page address for high byte
-PLATFORM_CHAR = $08 
-PLATFORM_COLOR = $09
+DATA_CHAR = $08 
+DATA_COLOR = $09
 LOCATION_FOR_DATA_LOAD = $000C
 
 ; repeated variables
@@ -552,10 +560,10 @@ wait_for_input:
         STA LEVEL_COUNTER
 
         LDA #$01
-        STA PLATFORM_CHAR
+        STA DATA_CHAR
 
-        LDA #$03
-        STA PLATFORM_COLOR
+        LDA #PLATFORM_COLOR
+        STA DATA_COLOR
 
         JSR GETIN
 
@@ -667,7 +675,7 @@ draw_bottom_loop:
 
 start_printing_platforms:
         ldx #$00
-        LDA PLATFORM_CHAR
+        LDA DATA_CHAR
         CMP #$02
         BEQ load_danger_platform
         
@@ -682,17 +690,17 @@ load_normal_platform:
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
         LDY #$00
-        LDA #$03
-        STA PLATFORM_COLOR
+        LDA #PLATFORM_COLOR
+        STA DATA_COLOR
         jmp load_print_platform
 
 load_hat:
         ldy #0
-        LDA #4
-        STA PLATFORM_COLOR
+        LDA #TITLE_HAT_COLOR
+        STA DATA_COLOR
 
-        LDA #$66
-        STA PLATFORM_CHAR
+        LDA #TITLE_HAT_CHAR
+        STA DATA_CHAR
         jmp continue_load_title_screen
 
 load_danger_platform:
@@ -706,17 +714,17 @@ load_danger_platform:
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
         LDY #$00
-        LDA #$02
-        STA PLATFORM_COLOR
+        LDA #DANGER_PLATFORM_COLOR
+        STA DATA_COLOR
         jmp load_print_platform
 
 load_cross:
         ldy #2
-        LDA #$7
-        STA PLATFORM_COLOR
+        LDA #YELLOW
+        STA DATA_COLOR
 
-        LDA #$56
-        STA PLATFORM_CHAR
+        LDA #TITLE_HAT_CROSSES_CHAR
+        STA DATA_CHAR
 
 continue_load_title_screen:
         LDA TITLE_SCREEN_TABLE,Y
@@ -748,7 +756,7 @@ print_platform:
         TYA
         TAX
         LDY #$00
-        LDA PLATFORM_CHAR                        ; Set platform identifier (or color)
+        LDA DATA_CHAR                        ; Set platform identifier (or color)
         JSR draw_platform               ; Call subroutine to draw the platform
         TXA
         TAY
@@ -767,7 +775,6 @@ color_is_96:
         STA COLOR_POS_HI
         jmp continue_color_platform    
         
-
 goto_color_platform:
         ldy #$00            
 
@@ -798,7 +805,7 @@ color_platform_loop:
         TYA
         TAX
         LDY #$00
-        LDA PLATFORM_COLOR                         ; Load color value (modify as needed)
+        LDA DATA_COLOR                         ; Load color value (modify as needed)
         JSR color_platform               ; Apply color to platform
         TXA
         TAY
@@ -821,7 +828,7 @@ jmp_to_wait_for_input:
         jmp wait_for_input
 
 goto_check_platform:
-        LDA PLATFORM_CHAR
+        LDA DATA_CHAR
         
         CMP #$02
         BEQ goto_print_gem
@@ -835,7 +842,7 @@ goto_check_platform:
 jmp_to_start_printing_platforms_after_02:
         LDY #$00
         LDA #$02
-        STA PLATFORM_CHAR
+        STA DATA_CHAR
         jmp start_printing_platforms
 
         
@@ -868,8 +875,8 @@ print_gem:
         TYA
         TAX
         LDY #$00
-        LDA #$04                        ; Load color value (modify as needed)
-        JSR draw_platform               ; Apply color to platform
+        LDA #GEM_CHAR                    
+        JSR draw_platform               
         TXA
         TAY
 
@@ -905,7 +912,7 @@ continue_color_gem:
         TYA
         TAX
         LDY #$00
-        LDA #$07                        ; Load color value (modify as needed)
+        LDA #YELLOW     ; Load color value (modify as needed)
         JSR color_platform               ; Apply color to platform
         TXA
         TAY
@@ -975,7 +982,7 @@ increment_gem_counter_hi_right:
 ; --------------------------------------------- SPAWNING PORTAL DOOR CODE ---------------------------------------------------
 spawn_portal_door:
         ldx #$00
-        LDA PLATFORM_CHAR
+        LDA DATA_CHAR
         CMP #16
         BEQ goto_load_second_portal_spawn
         CMP #17
@@ -1001,9 +1008,9 @@ load_first_portal:
 
         LDY #$00
         LDA #$04
-        STA PLATFORM_COLOR
+        STA DATA_COLOR
         LDA #16
-        STA PLATFORM_CHAR,y
+        STA DATA_CHAR,y
         
         LDA (ZP_SRC_ADDR_LO),Y
         CMP #$FE
@@ -1020,9 +1027,9 @@ load_door_top:
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
         LDA #$05
-        STA PLATFORM_COLOR
+        STA DATA_COLOR
         LDA #10
-        STA PLATFORM_CHAR,y
+        STA DATA_CHAR,y
 
         LDA (ZP_SRC_ADDR_LO),Y
         CMP #$FE
@@ -1039,7 +1046,7 @@ load_door_bottom:
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
         LDA #11
-        STA PLATFORM_CHAR,y
+        STA DATA_CHAR,y
         jmp char_screen
 
 goto_load_second_portal_spawn:
@@ -1058,9 +1065,9 @@ load_second_portal:
 
         LDY #$00
         LDA #$06
-        STA PLATFORM_COLOR
+        STA DATA_COLOR
         LDA #17
-        STA PLATFORM_CHAR
+        STA DATA_CHAR
         rts
 
 load_spawn:
@@ -1075,9 +1082,9 @@ load_spawn:
 
         LDY #$00
         LDA #HAT_COLOR
-        STA PLATFORM_COLOR
+        STA DATA_COLOR
         LDA #$00
-        STA PLATFORM_CHAR
+        STA DATA_CHAR
         jmp char_screen
 
 char_screen:
@@ -1095,7 +1102,7 @@ char_screen:
 
 continue_color_spawn:
         LDY #$00
-        LDA PLATFORM_COLOR
+        LDA DATA_COLOR
         jsr color_platform
        
         ldy #$00
@@ -1111,11 +1118,11 @@ continue_color_spawn:
         STA SCREEN_POS_HI        
 
         LDY #$00
-        LDA PLATFORM_CHAR                       ; Set platform identifier (or color)
+        LDA DATA_CHAR                       ; Set platform identifier (or color)
         JSR draw_platform               ; Call subroutine to draw the platform
 
 
-        LDA PLATFORM_CHAR
+        LDA DATA_CHAR
         CMP #$00
         BNE goto_spawn_portal_door
 
@@ -1896,5 +1903,5 @@ load_new_level:
     INC LEVEL_COUNTER       ; Increment the level counter
     INC LEVEL_COUNTER
     LDA #$01
-    STA PLATFORM_CHAR
+    STA DATA_CHAR
     jmp start_level
