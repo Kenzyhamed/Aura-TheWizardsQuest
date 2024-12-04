@@ -28,26 +28,7 @@ BORDER_CHAR = 18
 BORDER_COLOR = 4
 HAT_COLOR = 0
 
-; these are the addresses for our custom character set
-CHAR_LOCATION = $1C00
-NORAML_PLATFORM_LOCATION = $1C08
-DANGER_PLATFORM_LOCATION = $1C10
-BLANK_SPACE_LOCATION = $1C18
-GEM_LOCATION = $1C20
-ZERO_LOCATION = $1C28
-ONE_LOCATION = $1C30
-TWO_LOCATION = $1C38
-THREE_LOCATION = $1C40
-DEAD_CHAR_LOCATION = $1C48
-DOOR_LOCATION = $1C50
-DOOR_HANDLE_LOCATION = $1C58
-CHAR_RIGHT_LOCATION = #$1C60
-HAT_FALLING_LEFT_LOCATION = $1c68
-HAT_FALLING_RIGHT_LOCATION = $1c70
-HAT_FALLING_LOCATION = $1c78
-FIRST_PORTAL_LOCATION = $1c80
-SECOND_PORTAL_LOCATION = $1c88
-BRICK_LOCATION = $1c90
+DATA_START_LOCATION = $1C00
 
 ; addresses to store counts/variables
 COUNT_FOR_LOOP = $0003
@@ -73,6 +54,7 @@ ZP_SRC_ADDR_LO = $06  ; Zero-page address for low byte
 ZP_SRC_ADDR_HI = $07  ; Zero-page address for high byte
 PLATFORM_CHAR = $08 
 PLATFORM_COLOR = $09
+LOCATION_FOR_DATA_LOAD = $000C
 
 ; repeated variables
 ; TODO: add variables for all our custom characters
@@ -108,7 +90,6 @@ countValues:
         HEX 8D 0F 07 27 02 3D 02 10 07 23 1D 27 01 29 FF 
 
 CHAR:
-        ;org CHAR_LOCATION
         dc.b %00011100
         dc.b %00011010
         dc.b %00111000
@@ -473,12 +454,28 @@ DOOR_TOP_TABLE:
 DOOR_BOTTOM_TABLE:
     .word DOOR_BOTTOM_ADDRESS
 
+
+; these are the addresses for our custom character set
 DATA_TABLE:
-    .word CHAR
-
-LOCATION_TABLE:
-    .word CHAR_LOCATION
-
+    .word CHAR  
+    .word NORMAL_PLATFORM
+    .word DANGER_PLATFORM
+    .word BLANK_SPACE
+    .word GEM
+    .word ZERO
+    .word ONE
+    .word TWO
+    .word THREE
+    .word DEAD_CHAR
+    .word DOOR
+    .word DOOR_HANDLE
+    .word CHAR_RIGHT
+    .word HAT_FALLING_LEFT
+    .word HAT_FALLING_RIGHT
+    .word HAT_FALLING
+    .word FIRST_PORTAL
+    .word SECOND_PORTAL
+    .word BRICK
 
 ; our program starts here
 start:
@@ -490,168 +487,47 @@ clear_screen:
         JSR CLRCHN
 
 ; ----------------------------------- COPY CHAR DATA CODE -----------------------------------
-
         ldx #$00 
-copy_char_data:
-        lda CHAR,x              
-        sta CHAR_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_char_data  
-        ldx #$00
+        ldy #$00
 
-copy_char_right_data:
-        lda CHAR_RIGHT,x              
-        sta CHAR_RIGHT_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_char_right_data 
-        ldx #$00
+character_load_setup:
+        LDA DATA_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA DATA_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page
 
-copy_normal_data:
-        lda NORMAL_PLATFORM,x              
-        sta NORAML_PLATFORM_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_normal_data 
-        ldx #$00
-        
-copy_danger_data:
-        lda DANGER_PLATFORM,x              
-        sta DANGER_PLATFORM_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_danger_data
-        ldx #$00
+        cpx #152
+        beq title_screen
 
-copy_blank_data:
-        lda BLANK_SPACE,x              
-        sta BLANK_SPACE_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_blank_data
-        ldx #$00
+        ldy #$00
 
-copy_gem_data:
-        lda GEM,x              
-        sta GEM_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_gem_data
-        ldx #$00
+copy_data:
+        LDA (ZP_SRC_ADDR_LO),y
+        STA DATA_START_LOCATION,x
 
-copy_zero_data:
-        lda ZERO,x              
-        sta ZERO_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_zero_data
-        ldx #$00
+        inx
+        iny
+        cpy #8
 
-copy_one_data:
-        lda ONE,x              
-        sta ONE_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_one_data
-        ldx #$00
+        bne copy_data
 
-copy_two_data:
-        lda TWO,x              
-        sta TWO_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_two_data
-        ldx #$00
+        ; divide X by 4 and store in the accumulator
+        TXA                      ; Transfer X to A
+        LSR                     ; Logical shift right (divide by 2)
+        LSR                     ; Logical shift right again (divide by 2)
+        ; A now contains X / 4
 
-copy_three_data:
-        lda THREE,x              
-        sta THREE_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_three_data
-        ldx #$00
+        tay 
 
-copy_dead_char_data:
-        lda DEAD_CHAR,x              
-        sta DEAD_CHAR_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_dead_char_data
-        ldx #$00
+        jmp character_load_setup
 
-copy_door_data:
-        lda DOOR,x              
-        sta DOOR_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_door_data
-        ldx #$00
-
-copy_door_handle_data:
-        lda DOOR_HANDLE,x              
-        sta DOOR_HANDLE_LOCATION,x     
-        inx                    
-        cpx #8
-        bne copy_door_handle_data
-        ldx #$00
-
-copy_HAT_FALLING_LEFT_data:
-        lda HAT_FALLING_LEFT,x              
-        sta HAT_FALLING_LEFT_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_HAT_FALLING_LEFT_data       
-
-        ; copy PLATFORM data to $1c08
-        ldx #0
-
-copy_HAT_FALLING_RIGHT_data:
-        lda HAT_FALLING_RIGHT,x              
-        sta HAT_FALLING_RIGHT_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_HAT_FALLING_RIGHT_data       
-
-        ; copy PLATFORM data to $1c08
-        ldx #0
-
-copy_HAT_FALLING_data:
-        lda HAT_FALLING,x              
-        sta HAT_FALLING_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_HAT_FALLING_data       
-        ldx #0
-
-copy_FIRST_PORTAL_data:
-        lda FIRST_PORTAL,x              
-        sta FIRST_PORTAL_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_FIRST_PORTAL_data       
-        ldx #0
-
-copy_SECOND_PORTAL_data:
-        lda SECOND_PORTAL,x              
-        sta SECOND_PORTAL_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_SECOND_PORTAL_data       
-        ldx #0
-
-copy_brick_data:
-        lda BRICK,x              
-        sta BRICK_LOCATION,x     
-        inx                    
-        cpx #8                  
-        bne copy_brick_data   
-        ldx #0
 
 ; -----------------------------------  TITLE SCREEN CODE -----------------------------------
 
 title_screen:
-        LDX #0                          ; Initialize index to read msg    
+        LDX #0  
+        LDY #0                          ; Initialize index to read msg    
+                                ; Initialize index to read msg    
         JMP print_section_one
 
 print_section_one:
