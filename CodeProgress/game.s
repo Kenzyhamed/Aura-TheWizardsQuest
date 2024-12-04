@@ -308,10 +308,10 @@ LEVEL_OFFSETS:
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_1:
-    .byte  $44, $1E, $09, $FF
+    .byte  $44, $1E, $06, $FF
 
 START_ADDRESS_DANGER_PLATFORM_LVL_1:
-    .byte  $38, $1F, $11, $ff
+    .byte  $ff
 
 SPAWN_ADDRESS_LVL_1:
     .byte $30, $1E ; Low byte ($20), High byte ($1E)
@@ -323,7 +323,7 @@ SECOND_PORTAL_LVL_1:
     .byte $fe ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_1:
-        .byte $DF, $1F, $E1, $1F, $E0, $1F, $ff
+        .byte $26, $1F, $DF, $1F, $E0, $1F, $ff
 
 DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
@@ -1526,6 +1526,14 @@ check_under_right:
 
         jmp check_under_no_carry_right
 
+goto_increment_gem_then_continue_right_fall:
+        TXA
+        LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED  
+        TAX
+        jmp continue_check_under_no_carry_right
+
 check_under_no_carry_right:
         ldy #00
         ; Check if moving down is valid
@@ -1536,6 +1544,11 @@ check_under_no_carry_right:
         BEQ cannot_move_down_right            
         CMP BORDER_CHAR                   
         BEQ cannot_move_down_right       
+        CMP #04
+        BEQ goto_increment_gem_then_continue_right_fall
+            
+
+continue_check_under_no_carry_right:
 
         inx
 
@@ -1628,6 +1641,14 @@ goto_start_level_after_dying:
         jsr DelayLoop
         jmp start_level
 
+goto_increment_gem_then_continue_left_fall:
+        TXA
+        LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED  
+        TAX
+        jmp continue_check_under_no_carry_left
+
 check_under_no_carry_left:
         inx
         ldy #00
@@ -1638,9 +1659,11 @@ check_under_no_carry_left:
         CMP #01                    
         BEQ cannot_move_down_left          
         CMP BORDER_CHAR                   
-        BEQ cannot_move_down_left       
+        BEQ cannot_move_down_left  
+        CMP #04
+        BEQ goto_increment_gem_then_continue_left_fall
 
-
+continue_check_under_no_carry_left:
         ; Draw the character at the new position
         jsr fall_animation
         jmp check_under_left
