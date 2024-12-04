@@ -6,11 +6,15 @@
 CHROUT = $ffd2  
 CLRCHN = $ffcc
 HOME = $ffba
-GETIN = $FFE4   
+GETIN = $FFE4      
 
 ; Define boundaries for screen position high byte
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
 SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
+
+; Variables for delay storage
+DELAY_LOW   = $FC  ; Temporary storage for low byte of delay
+DELAY_HIGH  = $FD  ; Temporary storage for high byte of delay
 
 JUMP_COUNTER = $0230         ; Tracks how high the character has jumped-X
 JUMPRU_COUNTER=$0250
@@ -313,25 +317,19 @@ SPAWN_ADDRESS_LVL_1:
     .byte $30, $1E ; Low byte ($20), High byte ($1E)
 
 FIRST_PORTAL_LVL_1:
-    .byte $34, $1E ; Low byte ($20), High byte ($1E)
+    .byte $fe ; Low byte ($20), High byte ($1E)
 
 SECOND_PORTAL_LVL_1:
-    .byte $D7, $1F ; Low byte ($20), High byte ($1E)
+    .byte $fe ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_1:
         .byte $DF, $1F, $E1, $1F, $E0, $1F, $ff
 
-DOOR_ADDRESS:
+DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
-
-DOOR_COLOR_ADDRESS:
-        .byte $CC, $97, $ff
 
 DOOR_BOTTOM_ADDRESS:
         .byte $E2, $1F, $ff
-
-DOOR_BOTTOM_COLOR_ADDRESS:
-        .byte $E2, $97, $ff
 
 ;--------------------------------------- LEVEL 2 DATA ---------------------------
 
@@ -419,6 +417,12 @@ FIRST_PORTAL_TABLE:
 SECOND_PORTAL_TABLE:
     .word SECOND_PORTAL_LVL_1
     .word SECOND_PORTAL_LVL_2
+
+DOOR_TOP_TABLE:
+    .word DOOR_TOP_ADDRESS
+
+DOOR_BOTTOM_TABLE:
+    .word DOOR_BOTTOM_ADDRESS
 
 
 ; our program starts here
@@ -695,8 +699,6 @@ use_next_color_memory:
 ; ----------------------------------- WAITING FOR A TO PLAY THE GAME -----------------------------------
 
 wait_for_input:
-        JSR title_sound
-
         LDA #$00
         STA LEVEL_COUNTER
 
@@ -707,6 +709,7 @@ wait_for_input:
         STA PLATFORM_COLOR
 
         JSR GETIN
+        JSR title_sound
 
         CMP #'A
         BEQ start_level
@@ -717,7 +720,7 @@ wait_for_input:
 ; ----------------------------------- SCREEN CLEAR AFTER INPUT ON TITLE SCREEN -----------------------------------
 
 start_level:
-        JSR volume_off
+        JSR sound_off
 
 	lda #$93
 	jsr CHROUT	                ; Clear the screen
@@ -1006,7 +1009,7 @@ color_gem:
         ; Load the starting address into A
         LDA (ZP_SRC_ADDR_LO),y  
         CMP #$FF 
-        BEQ goto_print_door_top   
+        BEQ spawn_portal_door   
         STA COLOR_POS_LO       
         
         INY            
@@ -1032,99 +1035,6 @@ continue_color_gem:
         jmp color_gem
 
 
-goto_print_door_top:
-        LDX #$00
-        LDY #$00
-
-print_door_top:
-        ; Load the starting address into A
-        LDA DOOR_ADDRESS,x 
-        CMP #$FF       
-        BEQ goto_color_door_top
-        STA SCREEN_POS_LO        
-
-        INX
-
-        ; Load the high byte of the starting address
-        LDA DOOR_ADDRESS,x    
-        STA SCREEN_POS_HI        
-
-        LDA #$0A
-        jsr draw_platform
-
-        INX
-              
-        JMP print_door_top
-
-goto_color_door_top:
-        ldx #$00
-
-color_door_top:
-        ; Load the starting address into A
-        LDA DOOR_COLOR_ADDRESS,x 
-        CMP #$FF 
-        BEQ goto_print_door_bottom     
-        STA COLOR_POS_LO       
-        
-        INX            
-        
-        ; Load the high byte of the starting address
-        LDA DOOR_COLOR_ADDRESS,x    
-        STA COLOR_POS_HI      
-        
-        LDA #$05
-        jsr color_platform
-
-        INX
-
-        jmp color_door_top
-
-goto_print_door_bottom:
-        ldx #$00
-
-print_door_bottom:
-        ; Load the starting address into A
-        LDA DOOR_BOTTOM_ADDRESS,x 
-        CMP #$FF       
-        BEQ goto_color_door_bottom
-        STA SCREEN_POS_LO        
-
-        INX
-
-        ; Load the high byte of the starting address
-        LDA DOOR_BOTTOM_ADDRESS,x    
-        STA SCREEN_POS_HI        
-
-        LDA #$0B
-        jsr draw_platform
-
-        INX
-              
-        JMP print_door_bottom
-
-goto_color_door_bottom:
-        ldx #$00
-
-color_door_bottom:
-        ; Load the starting address into A
-        LDA DOOR_BOTTOM_COLOR_ADDRESS,x 
-        CMP #$FF 
-        BEQ spawn_portal     
-        STA COLOR_POS_LO       
-        
-        INX            
-        
-        ; Load the high byte of the starting address
-        LDA DOOR_BOTTOM_COLOR_ADDRESS,x    
-        STA COLOR_POS_HI      
-        
-        LDA #$05
-        jsr color_platform
-
-        INX
-
-        jmp color_door_bottom
-
 ; --------------------------------------------- GEM CODE ---------------------------------------------------
 
 check_gem_left:
@@ -1143,7 +1053,7 @@ increment_gem_counter_left:
 	STX GEMS_COLLECTED
 
         ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
-        JSR sound_collect_gem 
+        ;JSR sound_collect_gem 
 
 	JMP continue_drawing_left
         
@@ -1151,7 +1061,7 @@ increment_gem_counter_hi_left:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        JSR sound_collect_gem
+        ;JSR sound_collect_gem
 
 	JMP inc_screen_hi_then_draw
 
@@ -1169,7 +1079,7 @@ increment_gem_counter_right:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        JSR sound_collect_gem
+       ; JSR sound_collect_gem
 
 	JMP continue_drawing_right
         
@@ -1179,18 +1089,26 @@ increment_gem_counter_hi_right:
         INX
 	STX GEMS_COLLECTED
 
-        JSR sound_collect_gem
+        ;JSR sound_collect_gem
 
 	JMP dec_screen_hi_then_draw
-; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
-spawn_portal:
+; --------------------------------------------- SPAWNING PORTAL DOOR CODE ---------------------------------------------------
+spawn_portal_door:
         ldx #$00
         LDA PLATFORM_CHAR
         CMP #16
-        BEQ load_second_portal
+        BEQ goto_load_second_portal_spawn
         CMP #17
+        BEQ load_door_top
+        CMP #10
+        BEQ load_door_bottom
+        CMP #11
         BEQ load_spawn
+        jsr load_first_portal
+        jmp char_screen
         
+jmp_spawn_portal_door:
+        jmp spawn_portal_door
 load_first_portal:
         LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
         TAY                 ; Transfer the accumulator's value into the Y register
@@ -1202,10 +1120,50 @@ load_first_portal:
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
         LDY #$00
-        LDA #$06
+        LDA #$04
         STA PLATFORM_COLOR
         LDA #16
         STA PLATFORM_CHAR,y
+        
+        LDA (ZP_SRC_ADDR_LO),Y
+        CMP #$FE
+        BEQ jmp_spawn_portal_door
+        rts
+
+load_door_top:
+        LDY #$00
+
+      ; Load source address from table
+        LDA DOOR_TOP_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA DOOR_TOP_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDA #$05
+        STA PLATFORM_COLOR
+        LDA #10
+        STA PLATFORM_CHAR,y
+
+        LDA (ZP_SRC_ADDR_LO),Y
+        CMP #$FE
+        BEQ jmp_spawn_portal_door
+        jmp char_screen
+
+load_door_bottom:
+        LDY #$00
+
+      ; Load source address from table
+        LDA DOOR_BOTTOM_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA DOOR_BOTTOM_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDA #11
+        STA PLATFORM_CHAR,y
+        jmp char_screen
+
+goto_load_second_portal_spawn:
+        jsr load_second_portal
         jmp char_screen
 
 load_second_portal:
@@ -1223,7 +1181,7 @@ load_second_portal:
         STA PLATFORM_COLOR
         LDA #17
         STA PLATFORM_CHAR
-        jmp char_screen
+        rts
 
 load_spawn:
         LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
@@ -1256,14 +1214,10 @@ char_screen:
         STA COLOR_POS_HI  
 
 continue_color_spawn:
-        TYA
-        TAX
         LDY #$00
         LDA PLATFORM_COLOR
         jsr color_platform
-        TXA
-        TAY
-        
+       
         ldy #$00
 
         ; Load the starting address into A
@@ -1276,17 +1230,14 @@ continue_color_spawn:
         LDA (ZP_SRC_ADDR_LO),y    
         STA SCREEN_POS_HI        
 
-        TYA
-        TAX
         LDY #$00
         LDA PLATFORM_CHAR                       ; Set platform identifier (or color)
         JSR draw_platform               ; Call subroutine to draw the platform
-        TXA
-        TAY
+
 
         LDA PLATFORM_CHAR
         CMP #$00
-        BNE goto_spawn_portal
+        BNE goto_spawn_portal_door
 
       	LDA #$05
 	STA GEMS_COLLECTED
@@ -1299,8 +1250,8 @@ color_is_96_spawn:
         LDA #$96
         STA COLOR_POS_HI
         jmp continue_color_spawn 
-goto_spawn_portal:
-        jmp spawn_portal
+goto_spawn_portal_door:
+        jmp spawn_portal_door
 
 ; --------------------------------------------- DOOR TO NEXT LEVEL CODE ---------------------------------------------------
 return:
@@ -1332,8 +1283,6 @@ loop:
         beq moveright
         cmp #'R                     ; Check if 'R' was pressed (reset the level)
         beq goto_start_level
-        cmp #'M                     ; Check if 'J' was pressed (move left)
-        ;beq goto_jumpright
 
         jmp loop                     ; Continue the loop if no recognized key
 
@@ -1749,52 +1698,55 @@ fall_animation:
 first_portal_hit:
         LDA #$03
         jsr draw_platform
-        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
-        TAY                 ; Transfer the accumulator's value into the Y register
 
-      ; Load source address from table
-        LDA SECOND_PORTAL_TABLE,Y
-        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
-        LDA SECOND_PORTAL_TABLE+1,Y
-        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
-        LDY #$00
+        jsr goto_load_second_portal
+        ldx #$01
         jmp draw_char_after_portal_hit
 
 second_portal_hit:
         LDA #$03
         jsr draw_platform
-        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
-        TAY                 ; Transfer the accumulator's value into the Y register
+        jsr goto_load_first_portal
+        ldx #$00
+        jmp draw_char_after_portal_hit 
 
-      ; Load source address from table
-        LDA FIRST_PORTAL_TABLE,Y
-        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
-        LDA FIRST_PORTAL_TABLE+1,Y
-        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
-        LDY #$00
-        jmp draw_char_after_portal_hit
+goto_load_second_portal:
+        jmp load_second_portal
+
+goto_load_first_portal:
+        jmp load_first_portal
 
 draw_char_after_portal_hit:
 
         LDA (ZP_SRC_ADDR_LO),y
-        STA COLOR_POS_LO        
-        inc COLOR_POS_LO
+        STA COLOR_POS_LO 
+        CPX #$01
+        BEQ goto_inc_color_pos
+        CPX #$00
+        BEQ check_direction_color
+
+continue_portal_movement
         INY    
         
         ; Load the high byte of the starting address
         LDA (ZP_SRC_ADDR_LO),y   
         CMP #$1E
-        BEQ color_is_96_first_portal               ; Store in high byte register
+        BEQ color_is_96_portal               ; Store in high byte register
         LDA #$97
         STA COLOR_POS_HI  
 
-continue_color_first_portal:
+continue_portal_movement_2:
         ldy #$00
 
         ; Load the starting address into A
         LDA (ZP_SRC_ADDR_LO),y       
         STA SCREEN_POS_LO        
-        inc SCREEN_POS_LO
+        CPX #$01
+        BEQ goto_inc_screen_pos
+        CPX #$00
+        BEQ check_direction_screen
+
+continue_portal_movement_3:
         INY
 
         ; Load the high byte of the starting address
@@ -1804,126 +1756,158 @@ continue_color_first_portal:
         LDX #$00
         LDY #$00
         jmp no_high_increment_right
-        ;jmp loop
+
 ; spawning code prints the character at the spawn location
-color_is_96_first_portal:
+color_is_96_portal:
         LDA #$96
         STA COLOR_POS_HI
-        jmp continue_color_first_portal
+        jmp continue_portal_movement_2
+
+goto_inc_color_pos:
+        inc COLOR_POS_LO
+        jmp continue_portal_movement
+
+goto_inc_screen_pos:
+        inc SCREEN_POS_LO
+        jmp continue_portal_movement_3
+
+check_direction_color:
+        LDA DIRECTION
+        CMP #$00
+        BEQ goto_dec_color_pos
+        jmp goto_inc_color_pos
+        jmp continue_portal_movement
+
+goto_dec_color_pos:
+        dec COLOR_POS_LO
+        jmp continue_portal_movement
+
+check_direction_screen:
+        LDA DIRECTION
+        CMP #$00
+        BEQ goto_dec_screen_pos
+        jmp goto_inc_screen_pos
+
+goto_dec_screen_pos:
+        dec SCREEN_POS_LO
+        jmp continue_portal_movement_3
 
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
 title_sound:
-	jsr set_volume
+        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
+        ;LDA #$05        ; want to set volume to 5
+        ;STA $900E       ; memory location for setting volumne
 
-        jsr play_f_highest_octave
-        jsr speakers_off
+	;JSR e_note
+        ;JSR delay_sound  
+        ;JSR sound_off
 
-        jsr play_f_highest_octave
-        JSR triple_delay_speakers_off
+	;JSR g_note
+        ;JSR delay_sound  
+        ;JSR sound_off
 
-        jsr play_b_highest_octave
-        jsr speakers_off
-
-        jsr play_f_highest_octave
-        JSR double_triple_delay
-        jsr speakers_off
-
-        jsr play_b_highest_octave
-        JSR double_triple_delay
-        JSR triple_delay_speakers_off
-
-        jsr play_f_highest_octave
-        JSR triple_delay_speakers_off
-
-        jsr play_b_highest_octave
-        jsr speakers_off
-
-        JSR triple_delay
+	;JSR d_note
+        ;JSR delay_sound  
+        ;JSR sound_off
 
         RTS
-
-sound_portal:
-        jsr set_volume
-
-        LDA #$F0       ; wb #241
-        STA $900D      
-
-        ; TODO: do we want to turn the sound off once weve travelled thru to the other side?
-        jsr speakers_off
-        jsr volume_off
-
-	RTS
-
 
 sound_dead:	
-        jsr set_volume
+        LDA #$05 	; want to set volume to 5
+        STA $900E	; memory location for setting volumne
 
-	JSR play_c_note_low_octave
-     	JSR play_d_note_low_octave
-        JSR play_c_note_low_octave
+	;LDA #'D
+	;JSR CHROUT
 
-        jsr volume_off
-        RTS
+	JSR c_note
+   	
+     	JSR d_note
+	
+	;JSR c_note
+	
+	;JSR d_note
+	
+	JMP sound_off
 
 sound_collect_gem:
-        jsr set_volume
-        ; Play C#
-        LDA #241
-        STA $900C
-        jsr speakers_off
-        jsr volume_off
-        rts
+        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
 
-play_f_highest_octave:
-        LDA #163
-        STA $900C       
-        RTS
+	LDA #$05
+	STA $900E       ; memory location for setting volumne
 
-play_b_highest_octave:
-        LDA #191
-        STA $900C 
-        RTS
-
-play_c_note_low_octave:
-	LDA #$87        
-        STA $900A   
-
-        JSR speakers_off
-	RTS
-
-; TODO: if we dont use this anywhere else then we can put it into the sound_dead method
-play_d_note_low_octave:
-	LDA #$93
-        STA $900A
-	JSR speakers_off
-	RTS
-
-set_volume:
-        LDA #10
-        STA $900E       
-        RTS
-
-triple_delay_speakers_off:
-        JSR triple_delay
-        jsr speakers_off
-        rts
-
-volume_off:
+	LDA #$D7       
+        STA $900B 
+	LDA #$EE       
+        STA $900C      ; Store the value in memory address 36874 ($90B in hex)
+        JSR delay_sound
+        JSR delay_sound
+	
 	LDA #$00
-        STA $900E
+        STA $900C
+	STA $900B
+
+        JMP sound_off
+
+c_note:
+	LDA #$87        
+        STA $900A       ; Store the value in memory address 36874 ($90B in hex)
+	JSR delay_sound
+	
+	LDA #$00
+        STA $900A
 	
 	RTS
 
-speakers_off:
-        JSR triple_delay
+d_note:
+	LDA #$93
+        STA $900A
+	JSR DelayLoop
 
 	LDA #$00
         STA $900A
-        STA $900C
-        STA $900D
 
-        JSR triple_delay
+	RTS
+
+e_note:
+        LDA #$9F      
+        STA $900C
+        JSR loop
+
+        LDA #$00
+        STA $900C
+
+        RTS
+
+g_note:
+        LDA #$EB       ; Load the value 135 (87 in hex) into the A register
+        STA $900C
+        JSR loop
+
+        LDA #$00
+        STA $900C
+
+        RTS
+
+delay_sound:
+ ; increment the counter
+	LDA SOUND_COUNTER
+        INC SOUND_COUNTER
+
+        CMP #$02	
+	BNE delay_sound
+
+	LDA SOUND_LOOP_COUNT       ; Load LOOP_COUNT
+	INC SOUND_LOOP_COUNT       ; Increment LOOP_COUNT
+	
+	CMP #$01             ; Compare LOOP_COUNT with 1
+	BNE delay_sound        ; If LOOP_COUNT isn't 1, loop again
+
+	RTS
+
+sound_off:
+	LDA #$00
+        STA $900E
 	
 	RTS
 ; ---------------------------- DRAW AND COLOR CODE BEING USED AT A FEW PLACES ----------------------------
@@ -1935,17 +1919,6 @@ draw_platform:
 color_platform:
         STA (COLOR_POS_LO),y    
         rts
-
-triple_delay:
-        JSR DelayLoop2
-        JSR DelayLoop2
-        JSR DelayLoop2
-        RTS
-
-double_triple_delay:
-        JSR triple_delay
-        JSR triple_delay
-        RTS
 
 DelayLoop:
         LDX #$FF                  ; Set up outer loop counter
