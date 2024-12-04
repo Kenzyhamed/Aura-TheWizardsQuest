@@ -48,6 +48,7 @@ SOUND_COUNTER = $0008
 SOUND_LOOP_COUNT = $0009
 LEVEL_COUNTER = $000A
 DIRECTION = $000B
+HI_OR_LO = $000D
 
 ; this is a screen memory address to that the count shows on the screen 
 GEMS_COLLECTED = $1E15
@@ -356,7 +357,7 @@ SECOND_PORTAL_LVL_1:
     .byte $fe ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_1:
-        .byte $1F, $1F, $CF, $1F, $D0, $1F, $ff
+        .byte $2f, $1e, $32, $1e, $D0, $1F, $ff
 
 DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
@@ -921,64 +922,6 @@ continue_color_gem:
 
         jmp color_gem
 
-
-; --------------------------------------------- GEM CODE ---------------------------------------------------
-
-check_gem_left:
-        CMP #$04
-        BEQ increment_gem_counter_left
-        RTS
-
-check_gem_hi_increment_left:
-        CMP #$04
-        BEQ increment_gem_counter_hi_left
-        RTS
-
-increment_gem_counter_left:
-        LDX GEMS_COLLECTED
-        INX
-	STX GEMS_COLLECTED
-
-        ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
-        JSR sound_collect_gem_with_delay 
-
-	JMP continue_drawing_left
-        
-increment_gem_counter_hi_left:
-	LDX GEMS_COLLECTED
-        INX
-	STX GEMS_COLLECTED
-        JSR sound_collect_gem_with_delay
-
-	JMP inc_screen_hi_then_draw
-
-check_gem_right:
-        CMP #$04
-        BEQ increment_gem_counter_right
-        RTS
-
-check_gem_hi_increment_right:
-        CMP #$04
-        BEQ increment_gem_counter_hi_right
-        RTS
-
-increment_gem_counter_right:
-	LDX GEMS_COLLECTED
-        INX
-	STX GEMS_COLLECTED
-        JSR sound_collect_gem_with_delay
-
-	JMP continue_drawing_right
-        
-increment_gem_counter_hi_right:
-        ; TODO: instead of using this counter, we should load the value from GEMS_COLLECTED and increment that
-	LDX GEMS_COLLECTED
-        INX
-	STX GEMS_COLLECTED
-
-        JSR sound_collect_gem_with_delay
-
-	JMP dec_screen_hi_then_draw
 ; --------------------------------------------- SPAWNING PORTAL DOOR CODE ---------------------------------------------------
 spawn_portal_door:
         ldx #$00
@@ -1157,7 +1100,39 @@ can_go_to_next_level:
 
 goto_load_new_level:
         jmp load_new_level
+
+
+; --------------------------------------------- GEM CODE ---------------------------------------------------
+check_gem:
+        CMP #$04
+        BEQ increment_gem_counter
+        RTS
+
+increment_gem_counter:
+        LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED
+        JSR sound_collect_gem_with_delay
+
+left_or_right:
+        lda DIRECTION
+        beq collected_gem_on_left
+
+        ; default to right
+        lda HI_OR_LO
+        beq goto_continue_drawing_right
+        jmp dec_screen_hi_then_draw
+
+collected_gem_on_left:
+        lda HI_OR_LO
+        beq goto_continue_drawing_left
+        jmp inc_screen_hi_then_draw  
 ; --------------------------------------------- MOVE CODE ---------------------------------------------------
+
+goto_continue_drawing_left:
+        jmp continue_drawing_left
+goto_continue_drawing_right:
+        jmp continue_drawing_right
 
 ; this loop waits for the input from the 
 loop:
@@ -1205,9 +1180,11 @@ dec_hi_byte_dummy:
         jmp decremented_screen_hi
 
 decremented_screen_hi:
+        lda #$01
+        sta HI_OR_LO
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y           ; Load value at new position
-        JSR check_gem_hi_increment_left ; check if we have encountered a gem
+        JSR check_gem ; check if we have encountered a gem
         JSR can_go_to_next_level        ; check if we have encountered a door
         cmp #$03 
         beq inc_screen_hi_then_draw
@@ -1228,11 +1205,13 @@ inc_screen_hi_then_draw:
         jmp continue_drawing_left
 
 skip_decrement_screen_hi:
+        lda #$0
+        sta HI_OR_LO
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
         
         JSR can_go_to_next_level ; check if we have encountered a door
-        JSR check_gem_left
+        JSR check_gem
         cmp #$03 
         beq continue_drawing_left
         cmp #$20 
@@ -1276,9 +1255,11 @@ continue_drawing_left:
         jmp no_high_increment_left
 
 incremented_screen_hi:
+        lda #$0
+        sta HI_OR_LO
         ; Load value at new position and compare with blank space
-        lda (SCREEN_POS_LO),y      
-        JSR check_gem_right
+        lda (SCREEN_POS_LO),y    
+        JSR check_gem
         JSR can_go_to_next_level
 
         cmp #$03 
@@ -1326,10 +1307,12 @@ dec_screen_hi_then_draw:
 
 
 skip_increment_screen_hi:
+        lda #$0
+        sta HI_OR_LO
         ; Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      
 
-        JSR check_gem_right
+        JSR check_gem
         JSR can_go_to_next_level
         
         cmp #$03 
