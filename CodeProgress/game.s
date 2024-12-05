@@ -19,9 +19,11 @@ DIAGONAL = $0240
 
 ; screen addresses
 SCREEN_START = $1E00 	; Start of screen memory in VIC-20
+SCREEN_START_SECOND_ROW = $1E16 	; Start of screen memory in VIC-20
 SCREEN_WIDTH = 22       ; VIC-20 screen width (22 columns)
 SCREEN_HEIGHT = 23      ; VIC-20 screen height (23 rows)
-COLOR_MEM = $9600       ; 
+COLOR_MEM = $9600  
+COLOR_MEM_SECOND_ROW = $9616       
 NEXT_COLOR_MEM = $96FF
 VIC_CHAR_REG = $9005
 
@@ -49,6 +51,8 @@ SOUND_LOOP_COUNT = $0009
 LEVEL_COUNTER = $000A
 DIRECTION = $000B
 HI_OR_LO = $000D
+INTERRUPT_COUNTER = $000E
+INTERRUPT_COUNTER2 = $0013
 
 ; this is a screen memory address to that the count shows on the screen 
 GEMS_COLLECTED = $1E15
@@ -66,6 +70,11 @@ ZP_SRC_ADDR_HI = $07  ; Zero-page address for high byte
 DATA_CHAR = $08 
 DATA_COLOR = $09
 LOCATION_FOR_DATA_LOAD = $000C
+
+SCREEN_POS_LO2 = $0f
+SCREEN_POS_HI2 = $10
+COLOR_POS_LO2 = $11
+COLOR_POS_HI2 = $12
 
 ; repeated variables
 ; TODO: add variables for all our custom characters
@@ -820,33 +829,24 @@ start_level:
         
 	LDA #$00                        ; Initialize LOOP_COUNT to 0
 	STA SOUND_LOOP_COUNT
+        STA INTERRUPT_COUNTER            ; Load counter value
+        STA INTERRUPT_COUNTER2
 
         LDA #$ff                        ; Load low byte (0xF5)
-        sta VIC_CHAR_REG 
-        
+        sta VIC_CHAR_REG         
 ; --------------------------------------------- BORDER CODE ---------------------------------------------------
 ; Set up the top border                     ; Character to represent the border
         ldx #SCREEN_WIDTH               ; Number of characters to print
         ldy #0  
 
         lda #<SCREEN_START              ; Load the low byte of the screen start address
-        sta SCREEN_POS_LO       
+        sta SCREEN_POS_LO2       
         lda #>SCREEN_START              ; Load the high byte of the screen start address
-        sta SCREEN_POS_HI       
+        sta SCREEN_POS_HI2       
 	lda #<COLOR_MEM               ; Load the low byte of the color start address
-        sta COLOR_POS_LO        
+        sta COLOR_POS_LO2        
         lda #>COLOR_MEM               ; Load the high byte of the color start address
-        sta COLOR_POS_HI     
-        jmp draw_top_border
-
-load_and_color_border:
-        lda #BORDER_CHAR          ; Load the border character
-        sta (SCREEN_POS_LO),y     ; Store the character at the current screen position (using Y as the offset)
-
-        lda #BORDER_COLOR         ; Load the border color code
-        sta (COLOR_POS_LO),y      ; Store the color at the current color memory position
-
-        rts
+        sta COLOR_POS_HI2     
         
 draw_top_border:
     	 ; Now draw the border
@@ -871,20 +871,20 @@ draw_side_borders:
 
     	; Increment the screen position by SCREEN_WIDTH so we can go to the next row
         clc                             ; Clear carry for addition
-        lda SCREEN_POS_LO
+        lda SCREEN_POS_LO2
         adc #SCREEN_WIDTH               ; Add SCREEN_WIDTH to the low byte
-        sta SCREEN_POS_LO               ; Store back the result
+        sta SCREEN_POS_LO2               ; Store back the result
         bcc skip_high_increment         ; If carry is clear, skip incrementing the high byte
-        inc SCREEN_POS_HI               ; Otherwise, increment the high byte
+        inc SCREEN_POS_HI2               ; Otherwise, increment the high byte
 
 skip_high_increment:
         ; Increment the color memory position as well
         clc                             ; Clear carry for addition
-        lda COLOR_POS_LO
+        lda COLOR_POS_LO2
         adc #SCREEN_WIDTH               ; Add SCREEN_WIDTH to the low byte of color memory
-        sta COLOR_POS_LO                ; Store back the result
+        sta COLOR_POS_LO2                ; Store back the result
         bcc skip_color_high_inc         ; If carry is clear, skip incrementing the high byte
-        inc COLOR_POS_HI                ; Otherwise, increment the high byte of color memory
+        inc COLOR_POS_HI2                ; Otherwise, increment the high byte of color memory
 
 skip_color_high_inc:
         dex                             ; Decrement row counter
@@ -902,6 +902,14 @@ draw_bottom_loop:
         dex                             ; Decrement the X counter
         bne draw_bottom_loop            ; Continue until X = 0
 
+        lda #<SCREEN_START_SECOND_ROW              ; Load the low byte of the screen start address
+        sta SCREEN_POS_LO2      
+        lda #>SCREEN_START_SECOND_ROW              ; Load the high byte of the screen start address
+        sta SCREEN_POS_HI2      
+	lda #<COLOR_MEM_SECOND_ROW               ; Load the low byte of the color start address
+        sta COLOR_POS_LO2        
+        lda #>COLOR_MEM_SECOND_ROW               ; Load the high byte of the color start address
+        sta COLOR_POS_HI2   
 ; --------------------------------------------- PLATFORM PRINTING CODE ---------------------------------------------------
 
 start_printing_platforms:
@@ -1369,6 +1377,13 @@ goto_continue_drawing_right:
 
 ; this loop waits for the input from the 
 loop:
+        LDA INTERRUPT_COUNTER            
+        INC INTERRUPT_COUNTER     
+        LDA INTERRUPT_COUNTER
+        CMP #$ff              
+        BCC no_trigger
+        JSR trigger_falling_ceiling
+no_trigger:
         CLC        
         jsr GETIN                    ; Get key input
         beq loop                     ; If no key, continue loop
@@ -2131,3 +2146,50 @@ load_new_level:
     LDA #$01
     STA DATA_CHAR
     jmp start_level
+
+trigger_falling_ceiling:
+    inc INTERRUPT_COUNTER2
+    lda INTERRUPT_COUNTER2
+    cmp #$d0
+    bne no_trigger2
+    jsr init_draw_falling_ceiling
+
+    RTS              
+
+no_trigger2:
+    jmp no_trigger
+
+init_draw_falling_ceiling:  
+        LDY #0                 
+        LDx #0                
+draw_falling_ceiling:
+    jsr load_and_color_border
+
+    inc SCREEN_POS_LO2
+    inc COLOR_POS_LO2 
+    bne continue_draw_falling_ceiling
+    
+    lda SCREEN_POS_HI2
+    cmp #$1F
+    beq jump_to_start_level
+
+    inc SCREEN_POS_HI2
+    inc COLOR_POS_HI2         
+    
+continue_draw_falling_ceiling: 
+    inx   
+    CPx #22
+    BNE draw_falling_ceiling
+    rts
+
+jump_to_start_level:
+        jmp start_level
+
+load_and_color_border:
+        lda #BORDER_CHAR          ; Load the border character
+        sta (SCREEN_POS_LO2),y     ; Store the character at the current screen position (using Y as the offset)
+
+        lda #BORDER_COLOR         ; Load the border color code
+        sta (COLOR_POS_LO2),y      ; Store the color at the current color memory position
+
+        rts
