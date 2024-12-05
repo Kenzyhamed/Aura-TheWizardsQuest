@@ -29,7 +29,7 @@ BORDER_CHAR = 18
 BORDER_COLOR = 6
 HAT_COLOR = 0
 PLATFORM_COLOR = 3
-TITLE_HAT_COLOR = 4
+TITLE_HAT_COLOR = 2
 YELLOW = 7
 DANGER_PLATFORM_COLOR =2
 
@@ -52,6 +52,7 @@ HI_OR_LO = $000D
 
 ; this is a screen memory address to that the count shows on the screen 
 GEMS_COLLECTED = $1E15
+GEMS_COLLECTED_COLOR = $9615
 
 ; screen memory variables
 SCREEN_POS_LO   = $00   ; Low byte of screen memory address
@@ -330,6 +331,26 @@ BRICK:
        ; dc.b %11111111
        ; dc.b %00100100
        ; dc.b %00100100
+
+DISAPPEARING_CHAR_1:
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00010000
+        dc.b %00111000
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %00000000
+        dc.b %00000000
+
+DISAPPEARING_CHAR_2:
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00010000
+        dc.b %00111000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
 
 ;--------------------------------------- TITLE_SCREEN_HAT DATA ---------------------------
 
@@ -650,6 +671,8 @@ DATA_TABLE:
     .word FIRST_PORTAL
     .word SECOND_PORTAL
     .word BRICK
+    .word DISAPPEARING_CHAR_1
+    .word DISAPPEARING_CHAR_2
 
 ; our program starts here
 start:
@@ -675,7 +698,7 @@ character_load_setup:
         LDA DATA_TABLE+1,Y
         STA ZP_SRC_ADDR_HI            ; Store high byte in zero page
 
-        cpx #152
+        cpx #168
         beq title_screen
 
         ldy #$00
@@ -1239,6 +1262,9 @@ continue_color_spawn:
       	LDA #$05
 	STA GEMS_COLLECTED
 
+        LDA #02
+        STA GEMS_COLLECTED_COLOR
+
         LDX #$00
         LDY #$00
         jmp loop
@@ -1770,9 +1796,22 @@ fall_animation:
         STA (COLOR_POS_LO),y
 
         rts
+portal_animation:
+        LDA #19
+        STA (SCREEN_POS_LO),y 
+
+        jsr triple_delay
+
+        LDA #20
+        STA (SCREEN_POS_LO),y 
+
+        jsr triple_delay
+
+        rts
 
 
 first_portal_hit:
+        jsr portal_animation
         LDA #$03
         STA (SCREEN_POS_LO),y 
 
@@ -1781,6 +1820,7 @@ first_portal_hit:
         jmp draw_char_after_portal_hit
 
 second_portal_hit:
+        jsr portal_animation
         LDA #$03
         STA (SCREEN_POS_LO),y 
         jsr goto_load_first_portal
