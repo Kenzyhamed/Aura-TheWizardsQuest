@@ -373,13 +373,13 @@ TITLE_SCREEN_HAT_CROSSES:
 ;--------------------------------------- GAME DATA  ---------------------------
 ;--------------------------------------- LEVEL 1 ---------------------------
 FIRST_PORTAL_LVL_1:
-    .byte $ff
+    .byte $fe
 GEM_ADDRESS_LVL_1:
     .byte $D0, $1F, $DA, $1F, $DF, $1F, $ff
 SECOND_PORTAL_LVL_1:
-    .byte $ff
+    .byte $fe
 SPAWN_ADDRESS_LVL_1:
-    .byte $DD, $1F, $ff
+    .byte $DD, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_1:
     .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_1:
@@ -387,13 +387,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_1:
 
 ;--------------------------------------- LEVEL 2 ---------------------------
 FIRST_PORTAL_LVL_2:
-    .byte $ff
+    .byte $fe
 GEM_ADDRESS_LVL_2:
     .byte $0D, $1F, $D0, $1F, $DF, $1F, $ff
 SECOND_PORTAL_LVL_2:
-    .byte $ff
+    .byte $fe
 SPAWN_ADDRESS_LVL_2:
-    .byte $10, $1F, $ff
+    .byte $10, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_2:
     .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_2:
@@ -401,13 +401,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_2:
 
 ;--------------------------------------- LEVEL 3 ---------------------------
 FIRST_PORTAL_LVL_3:
-    .byte $ff
+    .byte $fe
 GEM_ADDRESS_LVL_3:
     .byte $33, $1E, $E7, $1E, $4E, $1F, $ff
 SECOND_PORTAL_LVL_3:
-    .byte $ff
+    .byte $fe
 SPAWN_ADDRESS_LVL_3:
-    .byte $30, $1E, $ff
+    .byte $30, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_3:
     .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_3:
@@ -415,13 +415,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_3:
 
 ;--------------------------------------- LEVEL 4 ---------------------------
 FIRST_PORTAL_LVL_4:
-    .byte $ff
+    .byte $fe
 GEM_ADDRESS_LVL_4:
     .byte $3A, $1E, $E6, $1E, $DE, $1F, $ff
 SECOND_PORTAL_LVL_4:
-    .byte $ff
+    .byte $fe
 SPAWN_ADDRESS_LVL_4:
-    .byte $37, $1E, $ff
+    .byte $37, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_4:
     .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_4:
@@ -429,13 +429,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_4:
 
 ;--------------------------------------- LEVEL 5 ---------------------------
 FIRST_PORTAL_LVL_5:
-    .byte $ff
+    .byte $fe
 GEM_ADDRESS_LVL_5:
     .byte $37, $1F, $DF, $1F, $E1, $1F, $ff
 SECOND_PORTAL_LVL_5:
-    .byte $ff
+    .byte $fe
 SPAWN_ADDRESS_LVL_5:
-    .byte $36, $1F, $ff
+    .byte $36, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_5:
     .byte $64, $1F, $3, $96, $1F, $3, $C8, $1F, $3, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_5:
@@ -443,13 +443,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_5:
 
 ;--------------------------------------- LEVEL 6 ---------------------------
 FIRST_PORTAL_LVL_6:
-    .byte $ff
+    .byte $fe
 GEM_ADDRESS_LVL_6:
     .byte $79, $1E, $81, $1F, $DF, $1F, $ff
 SECOND_PORTAL_LVL_6:
-    .byte $ff
+    .byte $fe
 SPAWN_ADDRESS_LVL_6:
-    .byte $77, $1E, $ff
+    .byte $77, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_6:
     .byte $E1, $1E, $3, $6B, $1F, $3, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_6:
@@ -457,13 +457,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_6:
 
 ;--------------------------------------- LEVEL 7 ---------------------------
 FIRST_PORTAL_LVL_7:
-    .byte $CD, $1E, $ff
+    .byte $CD, $1E
 GEM_ADDRESS_LVL_7:
     .byte $D0, $1E, $D0, $1F, $DB, $1F, $ff
 SECOND_PORTAL_LVL_7:
-    .byte $D8, $1F, $ff
+    .byte $D8, $1F
 SPAWN_ADDRESS_LVL_7:
-    .byte $D4, $1F, $ff
+    .byte $D4, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_7:
     .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_7:
@@ -471,13 +471,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_7:
 
 ;--------------------------------------- LEVEL 8 ---------------------------
 FIRST_PORTAL_LVL_8:
-    .byte $A7, $1E, $ff
+    .byte $A7, $1E
 GEM_ADDRESS_LVL_8:
     .byte $A3, $1E, $AA, $1E, $D0, $1F, $ff
 SECOND_PORTAL_LVL_8:
-    .byte $DD, $1F, $ff
+    .byte $DD, $1F
 SPAWN_ADDRESS_LVL_8:
-    .byte $DA, $1F, $ff
+    .byte $DA, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_8:
     .byte $39, $1F, $5, $44, $1F, $4, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_8:
@@ -485,13 +485,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_8:
 
 ;--------------------------------------- LEVEL 9 ---------------------------
 FIRST_PORTAL_LVL_9:
-    .byte $A7, $1E, $ff
+    .byte $A7, $1E
 GEM_ADDRESS_LVL_9:
     .byte $AA, $1E, $25, $1F, $D5, $1F, $ff
 SECOND_PORTAL_LVL_9:
-    .byte $29, $1F, $ff
+    .byte $29, $1F
 SPAWN_ADDRESS_LVL_9:
-    .byte $27, $1F, $ff
+    .byte $27, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_9:
     .byte $E0, $1E, $4, $81, $1F, $4, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_9:
@@ -499,13 +499,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_9:
 
 ;--------------------------------------- LEVEL 10 ---------------------------
 FIRST_PORTAL_LVL_10:
-    .byte $5A, $1E, $ff
+    .byte $5A, $1E
 GEM_ADDRESS_LVL_10:
     .byte $B7, $1E, $78, $1F, $DD, $1F, $ff
 SECOND_PORTAL_LVL_10:
-    .byte $D9, $1F, $ff
+    .byte $D9, $1F
 SPAWN_ADDRESS_LVL_10:
-    .byte $D6, $1F, $ff
+    .byte $D6, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_10:
     .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_10:
@@ -513,13 +513,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_10:
 
 ;--------------------------------------- LEVEL 11 ---------------------------
 FIRST_PORTAL_LVL_11:
-    .byte $52, $1F, $ff
+    .byte $52, $1F
 GEM_ADDRESS_LVL_11:
     .byte $8C, $1E, $54, $1F, $DA, $1F, $ff
 SECOND_PORTAL_LVL_11:
-    .byte $8A, $1E, $ff
+    .byte $8A, $1E
 SPAWN_ADDRESS_LVL_11:
-    .byte $88, $1E, $ff
+    .byte $88, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_11:
     .byte $96, $1F, $4, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_11:
@@ -527,13 +527,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_11:
 
 ;--------------------------------------- LEVEL 12 ---------------------------
 FIRST_PORTAL_LVL_12:
-    .byte $D1, $1F, $ff
+    .byte $D1, $1F
 GEM_ADDRESS_LVL_12:
     .byte $C9, $1E, $AD, $1F, $CF, $1F, $ff
 SECOND_PORTAL_LVL_12:
-    .byte $C7, $1E, $ff
+    .byte $C7, $1E
 SPAWN_ADDRESS_LVL_12:
-    .byte $30, $1E, $ff
+    .byte $30, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_12:
     .byte $FB, $1E, $3, $BE, $1F, $2, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_12:
@@ -541,13 +541,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_12:
 
 ;--------------------------------------- LEVEL 13 ---------------------------
 FIRST_PORTAL_LVL_13:
-    .byte $E0, $1F, $ff
+    .byte $E0, $1F
 GEM_ADDRESS_LVL_13:
     .byte $71, $1E, $5B, $1F, $6A, $1F, $ff
 SECOND_PORTAL_LVL_13:
-    .byte $52, $1E, $ff
+    .byte $52, $1E
 SPAWN_ADDRESS_LVL_13:
-    .byte $7C, $1E, $ff
+    .byte $7C, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_13:
     .byte $05, $1F, $1, $77, $1F, $2, $97, $1F, $6, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_13:
@@ -555,13 +555,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_13:
 
 ;--------------------------------------- LEVEL 14 ---------------------------
 FIRST_PORTAL_LVL_14:
-    .byte $52, $1E, $ff
+    .byte $52, $1E
 GEM_ADDRESS_LVL_14:
     .byte $54, $1E, $77, $1E, $DA, $1F, $ff
 SECOND_PORTAL_LVL_14:
-    .byte $75, $1E, $ff
+    .byte $75, $1E
 SPAWN_ADDRESS_LVL_14:
-    .byte $4B, $1E, $ff
+    .byte $4B, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_14:
     .byte $E4, $1E, $2, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_14:
@@ -569,13 +569,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_14:
 
 ;--------------------------------------- LEVEL 15 ---------------------------
 FIRST_PORTAL_LVL_15:
-    .byte $32, $1E, $ff
+    .byte $32, $1E
 GEM_ADDRESS_LVL_15:
     .byte $30, $1E, $A5, $1E, $D2, $1F, $ff
 SECOND_PORTAL_LVL_15:
-    .byte $DD, $1F, $ff
+    .byte $DD, $1F
 SPAWN_ADDRESS_LVL_15:
-    .byte $D7, $1F, $ff
+    .byte $D7, $1F
 START_ADDRESS_DANGER_PLATFORM_LVL_15:
     .byte $38, $1F, $3, $82, $1F, $3, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_15:
@@ -584,13 +584,13 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_15:
 
 ;--------------------------------------- LEVEL 16 ---------------------------
 FIRST_PORTAL_LVL_16:
-    .byte $D3, $1F, $ff
+    .byte $D3, $1F
 GEM_ADDRESS_LVL_16:
     .byte $5B, $1E, $69, $1E, $97, $1F, $ff
 SECOND_PORTAL_LVL_16:
-    .byte $3B, $1E, $ff
+    .byte $3B, $1E
 SPAWN_ADDRESS_LVL_16:
-    .byte $35, $1E, $ff
+    .byte $35, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_16:
     .byte $CA, $1E, $1, $E8, $1E, $1, $2D, $1F, $1, $5A, $1F, $1, $5C, $1F, $1, $B4, $1F, $1, $B6, $1F, $1, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_16:
@@ -598,17 +598,32 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_16:
 
 ;--------------------------------------- LEVEL 17 ---------------------------
 FIRST_PORTAL_LVL_17:
-    .byte $D8, $1F, $ff
+    .byte $D8, $1F
 GEM_ADDRESS_LVL_17:
     .byte $54, $1E, $B5, $1E, $7C, $1F, $ff
 SECOND_PORTAL_LVL_17:
-    .byte $52, $1E, $ff
+    .byte $52, $1E
 SPAWN_ADDRESS_LVL_17:
-    .byte $23, $1E, $ff
+    .byte $23, $1E
 START_ADDRESS_DANGER_PLATFORM_LVL_17:
     .byte $3F, $1F, $1, $45, $1F, $3, $83, $1F, $1, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_17:
     .byte $2F, $1E, $11, $5A, $1E, $1, $5D, $1E, $5, $63, $1E, $5, $69, $1E, $2, $71, $1E, $1, $76, $1E, $2, $7D, $1E, $3, $85, $1E, $1, $97, $1E, $1, $A6, $1E, $8, $C9, $1E, $3, $E7, $1E, $1, $F4, $1E, $1, $0B, $1F, $1, $1F, $1F, $1, $21, $1F, $6, $28, $1F, $1, $40, $1F, $2, $43, $1F, $1, $61, $1F, $4, $68, $1F, $4, $84, $1F, $3, $88, $1F, $1, $8A, $1F, $1, $91, $1F, $2, $9B, $1F, $1, $9F, $1F, $1, $D5, $1F, $1, $DF, $1F, $1, $ff
+
+
+;--------------------------------------- LEVEL 18 ---------------------------
+FIRST_PORTAL_LVL_18:
+    .byte $fe
+GEM_ADDRESS_LVL_18:
+    .byte $B2, $1E, $04, $1F, $94, $1F, $ff
+SECOND_PORTAL_LVL_18:
+    .byte $fe
+SPAWN_ADDRESS_LVL_18:
+    .byte $CF, $1F
+START_ADDRESS_DANGER_PLATFORM_LVL_18:
+    .byte $CF, $1E, $1, $D1, $1E, $1, $E4, $1E, $5, $FA, $1E, $5, $11, $1F, $3, $28, $1F, $1, $ff
+START_ADDRESS_NORMAL_PLATFORM_LVL_18:
+    .byte $5A, $1E, $7, $63, $1E, $1, $6B, $1E, $1, $73, $1E, $1, $7A, $1E, $1, $80, $1E, $1, $89, $1E, $1, $91, $1E, $1, $95, $1E, $1, $9F, $1E, $1, $A8, $1E, $1, $AA, $1E, $1, $B5, $1E, $1, $BF, $1E, $1, $CB, $1E, $1, $D5, $1E, $1, $E1, $1E, $1, $EB, $1E, $1, $F7, $1E, $1, $01, $1F, $1, $0D, $1F, $1, $17, $1F, $1, $23, $1F, $1, $2D, $1F, $1, $ff
 
 ;--------------------------------------- GAME TABLES ---------------------------
 FIRST_PORTAL_TABLE:
@@ -629,6 +644,7 @@ FIRST_PORTAL_TABLE:
     .word FIRST_PORTAL_LVL_15
     .word FIRST_PORTAL_LVL_16
     .word FIRST_PORTAL_LVL_17
+    .word FIRST_PORTAL_LVL_18
 
 GEM_ADDRESS_TABLE:
     .word GEM_ADDRESS_LVL_1
@@ -648,6 +664,7 @@ GEM_ADDRESS_TABLE:
     .word GEM_ADDRESS_LVL_15
     .word GEM_ADDRESS_LVL_16
     .word GEM_ADDRESS_LVL_17
+    .word GEM_ADDRESS_LVL_18
 
 SECOND_PORTAL_TABLE:
     .word SECOND_PORTAL_LVL_1
@@ -667,6 +684,7 @@ SECOND_PORTAL_TABLE:
     .word SECOND_PORTAL_LVL_15
     .word SECOND_PORTAL_LVL_16
     .word SECOND_PORTAL_LVL_17
+    .word SECOND_PORTAL_LVL_18
 
 SPAWN_ADDRESS_TABLE:
     .word SPAWN_ADDRESS_LVL_1
@@ -686,6 +704,7 @@ SPAWN_ADDRESS_TABLE:
     .word SPAWN_ADDRESS_LVL_15
     .word SPAWN_ADDRESS_LVL_16
     .word SPAWN_ADDRESS_LVL_17
+    .word SPAWN_ADDRESS_LVL_18
 
 START_ADDRESS_DANGER_PLATFORM_TABLE:
     .word START_ADDRESS_DANGER_PLATFORM_LVL_1
@@ -705,6 +724,7 @@ START_ADDRESS_DANGER_PLATFORM_TABLE:
     .word START_ADDRESS_DANGER_PLATFORM_LVL_15
     .word START_ADDRESS_DANGER_PLATFORM_LVL_16
     .word START_ADDRESS_DANGER_PLATFORM_LVL_17
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_18
 
 
 START_ADDRESS_NORMAL_PLATFORM_TABLE:
@@ -725,6 +745,8 @@ START_ADDRESS_NORMAL_PLATFORM_TABLE:
     .word START_ADDRESS_NORMAL_PLATFORM_LVL_15
     .word START_ADDRESS_NORMAL_PLATFORM_LVL_16
     .word START_ADDRESS_NORMAL_PLATFORM_LVL_17
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_18
+
 ;--------------------------------------- DATA TABLES END ---------------------------
 DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
@@ -1355,9 +1377,28 @@ continue_color_spawn:
         LDA #02
         STA GEMS_COLLECTED_COLOR
 
+        LDA LEVEL_COUNTER
+        cmp #34
+        beq end_screen
+
         LDX #$00
         LDY #$00
         jmp loop
+
+end_screen:
+       ldy #17
+       lda #00
+       sta (SCREEN_POS_LO),y
+       lda #07
+       sta (COLOR_POS_LO),y
+       ldy #18
+       lda #00
+       sta (SCREEN_POS_LO),y
+       lda #03
+       sta (COLOR_POS_LO),y
+       LDY #$00
+       jmp loop
+
 ; spawning code prints the character at the spawn location
 color_is_96_spawn:
         LDA #$96
@@ -1625,7 +1666,16 @@ no_carry:
     cmp #17                     
     beq second_portal
 
+    cmp #00                    
+    beq game_done
+
     JMP update_position
+game_done:
+        jsr invalid_move
+        ldy #00
+        LDA #04
+        STA (COLOR_POS_LO),y
+        jmp game_done
 
 check_under:
     ; Input:
@@ -2022,3 +2072,6 @@ load_and_color_border:
         sta (COLOR_POS_LO2),y      ; Store the color at the current color memory position
 
         rts
+
+
+
