@@ -1328,15 +1328,16 @@ goto_spawn_portal_door:
 return:
     RTS                 ; Early return if A is not zero
 
-can_go_to_next_level:       
-        cmp #$0B 
+check_door:
+        cmp #11 
         BNE return
-        
+        TAX
         LDA GEMS_COLLECTED
         
         ; have all 3 gems been collected?
         CMP #$08
         BEQ goto_load_new_level
+        TXA
         RTS
 
 goto_load_new_level:
@@ -1353,7 +1354,8 @@ increment_gem_counter:
         LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        JSR sound_collect_gem_with_delay
+        JSR sound_collect_gem
+        rts
 
 left_or_right:
         lda DIRECTION
@@ -1361,21 +1363,17 @@ left_or_right:
 
         ; default to right
         lda HI_OR_LO
-        beq goto_continue_drawing_right
-        jmp dec_screen_hi_then_draw
+        rts
+       ; beq goto_continue_drawing_right
+        ;jmp dec_screen_hi_then_draw
 
 collected_gem_on_left:
         lda HI_OR_LO
-        beq goto_continue_drawing_left
-        jmp inc_screen_hi_then_draw  
+        ;beq goto_continue_drawing_left
+        rts
+        ;jmp inc_screen_hi_then_draw  
 ; --------------------------------------------- MOVE CODE ---------------------------------------------------
 
-goto_continue_drawing_left:
-        jmp continue_drawing_left
-goto_continue_drawing_right:
-        jmp continue_drawing_right
-
-; this loop waits for the input from the 
 loop:
         LDA INTERRUPT_COUNTER            
         INC INTERRUPT_COUNTER     
@@ -1402,300 +1400,312 @@ skip_level:
         jmp load_new_level
 
 goto_start_level:
-        jmp start_level
+       jmp start_level
 
 moveright:
         lda #$01
         sta DIRECTION
-        jsr draw_right
+        jsr check_and_move
         jmp loop
         
 moveleft:
-        lda #$00
+        lda #$FF
         sta DIRECTION
-        jsr draw_left
+        jsr check_and_move
         jmp loop
 
-draw_left:
-        CLC
-        ldy #$00
+save_current_position:
+    LDA SCREEN_POS_LO         
+    STA TEMP_SCREEN_POS_LO
+    LDA SCREEN_POS_HI         
+    STA TEMP_SCREEN_POS_HI
+    rts
 
-        lda SCREEN_POS_LO,y
-        beq dec_hi_byte_dummy   ; If SCREEN_POS_LO didn't overflow, skip high byte increment
+; ----------------------- PORTAL CODE ------------------------------
+draw_char_after_portal_hit:
+       jsr load_portal_pos
 
-        dec SCREEN_POS_LO
-        jmp skip_decrement_screen_hi
-
-dec_hi_byte_dummy:
-        dec SCREEN_POS_HI      
-        lda #$ff
-        sta SCREEN_POS_LO 
-        jmp decremented_screen_hi
-
-decremented_screen_hi:
-        lda #$01
-        sta HI_OR_LO
-        ;Load value at new position and compare with blank space
-        lda (SCREEN_POS_LO),y           ; Load value at new position
-        JSR check_gem ; check if we have encountered a gem
-        JSR can_go_to_next_level        ; check if we have encountered a door
-        cmp #$03 
-        beq inc_screen_hi_then_draw
-        cmp #$20 
-        beq inc_screen_hi_then_draw       
-        cmp #16 
-        beq goto_inc_lo_then_first_portal_hit
-        cmp #17
-        beq goto_inc_lo_then_second_portal_hit
-
-        inc SCREEN_POS_LO
-        inc SCREEN_POS_HI
-
-        jmp loop
-        
-inc_screen_hi_then_draw:
-        inc SCREEN_POS_HI
-        jmp continue_drawing_left
-
-skip_decrement_screen_hi:
-        lda #$0
-        sta HI_OR_LO
-        ;Load value at new position and compare with blank space
-        lda (SCREEN_POS_LO),y      ; Load value at new position
-        
-        JSR can_go_to_next_level ; check if we have encountered a door
-        JSR check_gem
-        cmp #$03 
-        beq continue_drawing_left
-        cmp #$20 
-        beq continue_drawing_left       
-        cmp #16 
-        beq goto_inc_lo_then_first_portal_hit
-        cmp #17
-        beq goto_inc_lo_then_second_portal_hit
-
-        inc SCREEN_POS_LO
-        
-        jmp loop
-
-goto_inc_lo_then_first_portal_hit:
-        inc SCREEN_POS_LO
-        jmp first_portal_hit
-
-goto_inc_lo_hi_then_first_portal_hit:
-        inc SCREEN_POS_LO
-        inc SCREEN_POS_HI
-        jmp first_portal_hit
-
-goto_inc_lo_then_second_portal_hit:
-        inc SCREEN_POS_LO
-        jmp second_portal_hit
-
-goto_inc_lo_hi_then_second_portal_hit:
-        inc SCREEN_POS_LO
-        inc SCREEN_POS_HI
-        jmp second_portal_hit  
-
-continue_drawing_left:
-        inc SCREEN_POS_LO
-        lda #03 ; blank platform
-        STA (SCREEN_POS_LO),y 
-
-        lda SCREEN_POS_LO,y
-        beq dec_screen_hi_byte  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
-
-        dec SCREEN_POS_LO
-        jmp no_high_increment_left
-
-incremented_screen_hi:
-        lda #$0
-        sta HI_OR_LO
-        ; Load value at new position and compare with blank space
-        lda (SCREEN_POS_LO),y    
-        JSR check_gem
-        JSR can_go_to_next_level
-
-        cmp #$03 
-        beq dec_screen_hi_then_draw
-        cmp #$20 
-        beq dec_screen_hi_then_draw
-        cmp #16 
-        beq goto_dec_lo_hi_then_first_portal_hit
-        cmp #17 
-        beq goto_dec_lo_hi_then_second_portal_hit
-
-        dec SCREEN_POS_LO
-        dec SCREEN_POS_HI
-        
-        jmp loop
-        
-dec_screen_hi_byte:
-        dec SCREEN_POS_HI       
-        lda #$ff
-        sta SCREEN_POS_LO
-        jmp no_high_increment_left
-
-set_color_hi_96:
-        LDA #$96                       
-        STA COLOR_POS_HI                
-        rts              
-
-set_color_hi_97:
-        LDA #$97          
-        STA COLOR_POS_HI                   
-        rts                      
-
-draw_right:
-        CLC
-        ldy #$00
-
-        inc SCREEN_POS_LO
-        BNE skip_increment_screen_hi  
-        INC SCREEN_POS_HI             
-        jmp incremented_screen_hi
-
-dec_screen_hi_then_draw:
-        dec SCREEN_POS_HI
-        jmp continue_drawing_right
-
-
-skip_increment_screen_hi:
-        lda #$0
-        sta HI_OR_LO
-        ; Load value at new position and compare with blank space
-        lda (SCREEN_POS_LO),y      
-
-        JSR check_gem
-        JSR can_go_to_next_level
-        
-        cmp #$03 
-        beq continue_drawing_right
-        cmp #$20 
-        beq continue_drawing_right
-        cmp #16 
-        beq goto_dec_lo_then_first_portal_hit
-        cmp #17
-        beq goto_dec_lo_then_second_portal_hit
-
-        dec SCREEN_POS_LO
-        
-        jmp loop
-
-goto_dec_lo_then_first_portal_hit:
-        dec SCREEN_POS_LO
-        jmp first_portal_hit
-
-goto_dec_lo_hi_then_first_portal_hit:
-        dec SCREEN_POS_LO
-        dec SCREEN_POS_HI
-        jmp first_portal_hit
-
-goto_dec_lo_then_second_portal_hit:
-        dec SCREEN_POS_LO
-        jmp second_portal_hit
-
-goto_dec_lo_hi_then_second_portal_hit:
-        dec SCREEN_POS_LO
-        dec SCREEN_POS_HI
-        jmp second_portal_hit
-
-continue_drawing_right:
-        dec SCREEN_POS_LO
-        
-        lda #03
-        STA (SCREEN_POS_LO),y 
-        inc SCREEN_POS_LO
-        BNE no_high_increment_right  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
-
-        ; If carry is set, increment the high byte
-        INC SCREEN_POS_HI
-        lda #12
-        STA (SCREEN_POS_LO),y 
-
-        ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
-        LDA SCREEN_POS_HI          ; Load the high byte of the screen position
-        CMP #$1E                   ; Compare with 1E
-        BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
-        CMP #$1F                   ; Compare with 1F
-        BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
-
-        lda #HAT_COLOR
-        STA (COLOR_POS_LO),y
-
-        JMP loop
-
-no_high_increment_right:
-        LDX #$00
-        jmp check_under_right
-
-no_high_increment_left:
-        LDX #$00
-        jmp check_under_left
-        
-check_under_right:        
-        LDA SCREEN_POS_LO         
-        STA TEMP_SCREEN_POS_LO
-
-        LDA SCREEN_POS_LO         ; Load the low byte into the accumulator
-        CLC                        ; Clear carry for addition
-        ADC #$16                   ; Add 0x16 (22 in decimal) to move one block down
-        STA SCREEN_POS_LO          ; Update SCREEN_POS_LO to the new position
-        STA COLOR_POS_LO
-
-        BCC check_under_no_carry_right     ; Branch if there is no carry (no high byte increment)
+       CPX #$01
+       BEQ spawn_on_right
        
-        inc SCREEN_POS_HI
-        inc COLOR_POS_HI
+       CPX #$00
+       BEQ check_spawn_left_or_right
 
-        jmp check_under_no_carry_right
+load_portal_pos:
+       LDA (ZP_SRC_ADDR_LO),y
+       STA SCREEN_POS_LO
 
-goto_increment_gem_then_continue_right_fall:
-        LDA #15
-        STA (SCREEN_POS_LO),y 
-        LDA #00
-        STA (COLOR_POS_LO),y
-        jsr sound_collect_gem
-        TXA
-        LDX GEMS_COLLECTED
-        INX
-	STX GEMS_COLLECTED  
-        TAX
-        jmp continue_check_under_no_carry_right
+       iny 
 
-check_under_no_carry_right:
-        jsr volume_off_all
-        ldy #00
-        ; Check if moving down is valid
-        LDA (SCREEN_POS_LO),y ; Load the value at the new position
-        CMP #02                     
-        BEQ char_died           
-        CMP #01                    
-        BEQ cannot_move_down_right            
-        CMP #BORDER_CHAR                   
-        BEQ cannot_move_down_right       
-        CMP #04
-        BEQ goto_increment_gem_then_continue_right_fall
-            
+       LDA (ZP_SRC_ADDR_LO),y
+       STA SCREEN_POS_HI
 
-continue_check_under_no_carry_right:
+       jsr set_color_pos
 
-        inx
+       rts
 
-        ; Draw the character at the new position
-        jsr fall_animation
-        
-        jmp check_under_right
+spawn_on_right:
+        ; need to increment color and screen
+        inc SCREEN_POS_LO
+        inc COLOR_POS_LO
 
-cannot_move_down_right:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
-        STA COLOR_POS_LO
+        jsr check_under
+    
+    ; Update the character's position
+    jmp bounce_animation
 
-        jmp bounce_animation
+check_spawn_left_or_right:
+        lda DIRECTION
+        bmi spawn_on_left ; moving left
+        jmp spawn_on_right 
+
+spawn_on_left:
+        dec SCREEN_POS_LO
+        dec COLOR_POS_LO
+
+        jsr check_under
+    
+    ; Update the character's position
+    jmp bounce_animation
+
+portal_animation:
+       LDA #19
+       STA (SCREEN_POS_LO),y
+
+       jsr triple_delay
+
+       LDA #20
+       STA (SCREEN_POS_LO),y
+
+       jsr triple_delay
+
+       rts
+
+first_portal:
+       jsr invalid_move
+       
+       jsr portal_animation
+       LDA #$03
+       STA (SCREEN_POS_LO),y
+
+       jsr load_second_portal
+       ldx #$01
+       jmp draw_char_after_portal_hit
+
+second_portal:
+       jsr invalid_move
+       
+       jsr portal_animation
+       LDA #$03
+
+       STA (SCREEN_POS_LO),y
+       jsr load_first_portal
+
+       ldx #$00
+       jmp draw_char_after_portal_hit
+; ----------------------- PORTAL CODE END ------------------------------
+
+check_and_move:
+    ; Input:
+    ;   - DIRECTION: Direction offset (e.g., #$16 for down, #$F0 for up)
+    ;   - SCREEN_POS_LO/SCREEN_POS_HI: Current position
+    ; Output:
+    ;   - Updates SCREEN_POS_LO/SCREEN_POS_HI if valid move
+    ;   - Handles obstacles, gems, hazards, and invalid moves
+    ;   - May jump to other routines for specific actions (e.g., `char_died`)
+
+    ; Save the current position
+    jsr save_current_position
+
+    ; Calculate the new position by applying DIRECTION
+    LDA SCREEN_POS_LO
+    CLC                        ; Clear carry for addition/subtraction
+    ADC DIRECTION              ; Add the direction offset stored in DIRECTION
+    STA SCREEN_POS_LO          ; Update the low byte
+
+    ; Check for wraparound (low byte went from FF -> 00 or 00 -> FF)
+    LDA TEMP_SCREEN_POS_LO     ; Load the original low byte
+    CMP SCREEN_POS_LO          ; Compare original with updated
+    BCC handle_increment       ; If updated < original, it wrapped forward (FF -> 00)
+    BCS handle_decrement_check ; If updated > original, it wrapped backward (00 -> FF)
+
+    ; If no wraparound, continue as normal
+    JMP no_carry
+
+handle_increment:
+    ; check if TEMP_SCREEN_POS_LO is 00
+    cmp #$ff
+    BNE no_carry               ; Skip increment if not $1E
+
+    lda SCREEN_POS_HI
+    cmp #$1F
+    beq no_carry
+
+    ; Increment the high byte if wrapping forward (FF -> 00)
+    INC SCREEN_POS_HI          ; Increment high byte
+    JMP no_carry
+
+handle_decrement_check:
+    ; Decrement the high byte only if wrapping backward (00 -> FF)
+    LDA TEMP_SCREEN_POS_LO     ; Load original low byte
+    CMP #$00                   ; Was the original low byte 00?
+    BNE no_carry               ; If not 00, no need to decrement
+
+    ; Proceed with decrement
+    LDA SCREEN_POS_HI
+    CMP #$1F                   ; Decrement only if high byte is $1F
+    BNE no_carry               ; Skip decrement if not $1F
+    DEC SCREEN_POS_HI          ; Decrement high byte
+
+no_carry:
+    ; Load the character at the new position
+    LDY #$00
+    LDA (SCREEN_POS_LO),Y 
+
+    jsr check_gem
+    jsr check_door
+
+    CMP #$02                  ; fire platform 
+    BEQ char_died
+    
+    CMP #BORDER_CHAR              
+    BEQ invalid_move
+
+    cmp #$0b                    ; door handle char
+    beq invalid_move
+
+    cmp #16                    
+    beq first_portal
+ 
+    cmp #17                     
+    beq second_portal
+
+    JMP update_position
+
+check_under:
+    ; Input:
+    ;   - SCREEN_POS_LO: Current screen position low byte
+    ;   - SCREEN_POS_HI: Current screen position high byte
+    ;   - A: Action offset (16 for down, -16 for up, etc.)
+    ; Output:
+    ;   - Updates SCREEN_POS_LO and SCREEN_POS_HI for valid moves
+    ;   - Handles gems, deaths, and bounces
+    ;   - Jumps to appropriate routines for special cases
+
+    jsr save_current_position
+
+    ; Move down by 0x16
+    LDA SCREEN_POS_LO
+    CLC
+    ADC #$16                  ; Add offset to go down one block
+    STA SCREEN_POS_LO         ; Update the low byte
+    BCC check_under_no_carry  ; Branch if no carry
+
+    ; Handle carry for the high byte, only increment if SCREEN_POS_HI is $1E
+    INC SCREEN_POS_HI          ; Increment the high byte
+
+check_under_no_carry:
+    LDY #$00
+    LDA (SCREEN_POS_LO),Y 
+
+    CMP #$01                 ;  platform 
+    BEQ invalid_move
+
+    CMP #$02                  ; fire platform 
+    BEQ char_died
+    
+    CMP #BORDER_CHAR              
+    BEQ invalid_move
+
+    cmp #$0b                    ; door handle char
+    beq invalid_move
+
+    jsr check_gem
+    jsr fall_animation
+
+    jmp check_under
+
+fall_animation:
+       jsr set_color_pos
+
+       LDA #15
+       STA (SCREEN_POS_LO),y
+      
+       LDA #HAT_COLOR
+       STA (COLOR_POS_LO),y
+
+       jsr jiffy_delay_fast
+
+       LDA #03
+       STA (SCREEN_POS_LO),y 
+
+       LDA #HAT_COLOR
+       STA (COLOR_POS_LO),y
+       
+       jsr volume_off_all
+
+       rts
+
+update_position:
+    ; first remove from previous position 
+    LDA #03
+    STA (TEMP_SCREEN_POS_LO),y 
+    ;LDA #HAT_COLOR
+    ;STA (COLOR_POS_LO),y
+
+    jsr check_under
+    
+    ; Update the character's position
+    jmp bounce_animation
+
+invalid_move:
+    ; Restore original position
+    LDA TEMP_SCREEN_POS_LO
+    STA SCREEN_POS_LO
+    LDA TEMP_SCREEN_POS_HI
+    STA SCREEN_POS_HI
+    RTS                       ; Return without updating position
+
+char_died:
+       SEC                  ; Set the carry to prepare for subtraction
+       LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
+       SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
+       STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+       STA COLOR_POS_LO    ; Store the result back into SCREEN_POS_LO
+
+
+       LDA #$09                    ; Load the character code for the blank platform
+       STA (SCREEN_POS_LO),y           ; Draw the blank character at the reverted position
+      
+       LDA #HAT_COLOR
+       STA (COLOR_POS_LO),y    
+
+       JSR sound_dead
+       ldy #$00
+       jsr DelayLoop
+       jmp start_level  
+                      
+set_color_pos:
+        lda SCREEN_POS_LO
+        sta COLOR_POS_LO
+
+        lda SCREEN_POS_HI
+        cmp #$1E
+        beq dont_increment_color_hi
+
+        lda #$97
+        sta COLOR_POS_HI
+
+        rts
+
+dont_increment_color_hi:
+        lda #$96
+        sta COLOR_POS_HI
+        rts
 
 bounce_animation:
+        jsr set_color_pos
+
         jsr handle_load_bounce_hat 
         STA (SCREEN_POS_LO),y 
         
@@ -1707,263 +1717,32 @@ bounce_animation:
 
         jsr handle_load_hat
         STA (SCREEN_POS_LO),y  
+
+        jsr volume_off_all
         
         jmp loop
-
-turn_sound_off:
-        jsr volume_off_all
-
+        
 handle_load_bounce_hat:
         lda DIRECTION
-        beq load_right_bounce
-
-        ; load left bounce if not equal        
+        BMI load_left_bounce          ; If negative (e.g., moving left)
+        ; load right bounce if not negative        
         lda #14
         rts
 
-load_right_bounce:
+load_left_bounce:
         lda #13
         rts
-
+        
 handle_load_hat:
         lda DIRECTION
-        beq load_right_hat
-        
-        ; load left hat if not equal
+        BMI load_left_hat
+        ; load right hat if not negative
         lda #12
         rts
 
-load_right_hat:
+load_left_hat:
         lda #00
         rts
-
-check_under_left:       
-        LDA SCREEN_POS_LO         
-        STA TEMP_SCREEN_POS_LO
-
-        LDA SCREEN_POS_LO         
-        CLC                         
-        ADC #$16                   
-        STA SCREEN_POS_LO          
-        STA COLOR_POS_LO
-
-        BCC check_under_no_carry_left    
-        inc SCREEN_POS_HI
-        inc COLOR_POS_HI
-        jmp check_under_no_carry_left
-
-char_died:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
-        STA COLOR_POS_LO    ; Store the result back into SCREEN_POS_LO
-
-        LDA #$09                    ; Load the character code for the blank platform
-        STA (SCREEN_POS_LO),y           ; Draw the blank character at the reverted position
-        
-        LDA #HAT_COLOR
-        STA (COLOR_POS_LO),y          
-
-        jmp goto_start_level_after_dying
-
-goto_start_level_after_dying:
-        JSR sound_dead
-        ldy #$00
-        jsr DelayLoop
-        jmp start_level
-
-goto_increment_gem_then_continue_left_fall:
-        jsr sound_collect_gem
-        TXA
-        LDX GEMS_COLLECTED
-        INX
-	STX GEMS_COLLECTED  
-        TAX
-        jmp continue_check_under_no_carry_left
-
-check_under_no_carry_left:
-        jsr volume_off_all
-        inx
-        ldy #00
-        ; Check if moving down is valid
-        LDA (SCREEN_POS_LO),y ; Load the value at the new position
-        CMP #02                     
-        BEQ char_died      
-        CMP #01                    
-        BEQ cannot_move_down_left          
-        CMP #BORDER_CHAR                   
-        BEQ cannot_move_down_left  
-        CMP #04
-        BEQ goto_increment_gem_then_continue_left_fall
-
-continue_check_under_no_carry_left:
-        ; Draw the character at the new position
-        jsr fall_animation
-        jmp check_under_left
-
-cannot_move_down_left:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
-        STA COLOR_POS_LO
-
-        jmp bounce_animation
-
-jiffy_delay_fast:
-        TXA
-        jsr DelayLoop2
-        TAX
-        rts
-    ; Calculate target jiffy time
-   ; LDA $A2            ; Low byte of current jiffy clock
-   ; CLC
-   ; ADC #$04           ; Add a small delay (2 jiffies)
-   ; STA DELAY_LOW      ; Store target low byte
-   ; LDA $A3            ; High byte of current jiffy clock
-   ; ADC #$00           ; Carry over to high byte if necessary
-   ; STA DELAY_HIGH     ; Store target high byte
-
-.wait:
-    ; Wait until the jiffy clock reaches or exceeds the target time
-   ; LDA $A2            ; Current low byte
-   ; CMP DELAY_LOW      ; Compare with target low byte
-   ; LDA $A3            ; Current high byte
-   ; SBC DELAY_HIGH     ; Subtract target high byte
-   ; BCC .wait          ; If not reached, loop
-
-    ;RTS
-
-fall_animation:
-        LDA #15
-        STA (SCREEN_POS_LO),y 
-        
-        LDA #HAT_COLOR
-        STA (COLOR_POS_LO),y
-
-        jsr jiffy_delay_fast
-
-        LDA #03
-        STA (SCREEN_POS_LO),y  
-
-        LDA #HAT_COLOR
-        STA (COLOR_POS_LO),y
-
-        rts
-portal_animation:
-        LDA #19
-        STA (SCREEN_POS_LO),y 
-
-        jsr triple_delay
-
-        LDA #20
-        STA (SCREEN_POS_LO),y 
-
-        jsr triple_delay
-
-        rts
-
-
-first_portal_hit:
-        jsr portal_animation
-        LDA #$03
-        STA (SCREEN_POS_LO),y 
-
-        jsr goto_load_second_portal
-        ldx #$01
-        jmp draw_char_after_portal_hit
-
-second_portal_hit:
-        jsr portal_animation
-        LDA #$03
-        STA (SCREEN_POS_LO),y 
-        jsr goto_load_first_portal
-        ldx #$00
-        jmp draw_char_after_portal_hit 
-
-goto_load_second_portal:
-        jmp load_second_portal
-
-goto_load_first_portal:
-        jmp load_first_portal
-
-draw_char_after_portal_hit:
-
-        LDA (ZP_SRC_ADDR_LO),y
-        STA COLOR_POS_LO 
-        CPX #$01
-        BEQ goto_inc_color_pos
-        CPX #$00
-        BEQ check_direction_color
-
-continue_portal_movement
-        INY    
-        
-        ; Load the high byte of the starting address
-        LDA (ZP_SRC_ADDR_LO),y   
-        CMP #$1E
-        BEQ color_is_96_portal               ; Store in high byte register
-        LDA #$97
-        STA COLOR_POS_HI  
-
-continue_portal_movement_2:
-        ldy #$00
-
-        ; Load the starting address into A
-        LDA (ZP_SRC_ADDR_LO),y       
-        STA SCREEN_POS_LO        
-        CPX #$01
-        BEQ goto_inc_screen_pos
-        CPX #$00
-        BEQ check_direction_screen
-
-continue_portal_movement_3:
-        INY
-
-        ; Load the high byte of the starting address
-        LDA (ZP_SRC_ADDR_LO),y    
-        STA SCREEN_POS_HI        
-
-        LDX #$00
-        LDY #$00
-        jmp no_high_increment_right
-
-; spawning code prints the character at the spawn location
-color_is_96_portal:
-        LDA #$96
-        STA COLOR_POS_HI
-        jmp continue_portal_movement_2
-
-goto_inc_color_pos:
-        inc COLOR_POS_LO
-        jmp continue_portal_movement
-
-goto_inc_screen_pos:
-        inc SCREEN_POS_LO
-        jmp continue_portal_movement_3
-
-check_direction_color:
-        LDA DIRECTION
-        CMP #$00
-        BEQ goto_dec_color_pos
-        jmp goto_inc_color_pos
-        jmp continue_portal_movement
-
-goto_dec_color_pos:
-        dec COLOR_POS_LO
-        jmp continue_portal_movement
-
-check_direction_screen:
-        LDA DIRECTION
-        CMP #$00
-        BEQ goto_dec_screen_pos
-        jmp goto_inc_screen_pos
-
-goto_dec_screen_pos:
-        dec SCREEN_POS_LO
-        jmp continue_portal_movement_3
-
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
 title_sound:
@@ -2136,6 +1915,11 @@ DelayLoopY:
         BNE DelayLoopX            ; If X is not zero, branch back to DelayLoopX
         RTS
 
+jiffy_delay_fast:
+        TXA
+        jsr DelayLoop2
+        TAX
+        rts
 ; ---------------------------------------- LOAD NEW LEVEL -------------------------
 ; this whole routine needs to be opimized. right now we have seperate methods for each level but in the future we should find a way to 
 ; call these setup levels using an offset
