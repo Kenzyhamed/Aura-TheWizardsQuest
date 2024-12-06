@@ -457,129 +457,159 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_6:
 
 ;--------------------------------------- LEVEL 7 ---------------------------
 FIRST_PORTAL_LVL_7:
-    .byte $ff
+    .byte $CD, $1E, $ff
 GEM_ADDRESS_LVL_7:
-    .byte $89, $1E, $EB, $1E, $37, $1F, $ff
+    .byte $D0, $1E, $D0, $1F, $DB, $1F, $ff
 SECOND_PORTAL_LVL_7:
-    .byte $ff
+    .byte $D8, $1F, $ff
 SPAWN_ADDRESS_LVL_7:
-    .byte $8D, $1E, $ff
+    .byte $D4, $1F, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_7:
-    .byte $D1, $1E, $4, $77, $1F, $3, $ff
+    .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_7:
-    .byte $9E, $1E, $8, $F5, $1E, $13, $4C, $1F, $4, $ff
+    .byte $E1, $1E, $6, $ff
 
 ;--------------------------------------- LEVEL 8 ---------------------------
 FIRST_PORTAL_LVL_8:
-    .byte $CD, $1E, $ff
+    .byte $A7, $1E, $ff
 GEM_ADDRESS_LVL_8:
-    .byte $D0, $1E, $D0, $1F, $DB, $1F, $ff
+    .byte $A3, $1E, $AA, $1E, $D0, $1F, $ff
 SECOND_PORTAL_LVL_8:
-    .byte $D8, $1F, $ff
+    .byte $DD, $1F, $ff
 SPAWN_ADDRESS_LVL_8:
-    .byte $D4, $1F, $ff
+    .byte $DA, $1F, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_8:
-    .byte $ff
+    .byte $39, $1F, $5, $44, $1F, $4, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_8:
-    .byte $E1, $1E, $6, $ff
+    .byte $B8, $1E, $9, $ff
 
 ;--------------------------------------- LEVEL 9 ---------------------------
 FIRST_PORTAL_LVL_9:
-    .byte $ff
+    .byte $A7, $1E, $ff
 GEM_ADDRESS_LVL_9:
-    .byte $89, $1E, $E9, $1E, $37, $1F, $ff
+    .byte $AA, $1E, $25, $1F, $D5, $1F, $ff
 SECOND_PORTAL_LVL_9:
-    .byte $ff
+    .byte $29, $1F, $ff
 SPAWN_ADDRESS_LVL_9:
-    .byte $8D, $1E, $ff
+    .byte $27, $1F, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_9:
-    .byte $D1, $1E, $2, $77, $1F, $3, $ff
+    .byte $E0, $1E, $4, $81, $1F, $4, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_9:
-    .byte $9E, $1E, $8, $F5, $1E, $9, $1, $4C, $1F, $4, $ff
+    .byte $B8, $1E, $9, $3A, $1F, $6, $ff
 
 ;--------------------------------------- LEVEL 10 ---------------------------
 FIRST_PORTAL_LVL_10:
-    .byte $A7, $1E, $ff
+    .byte $5A, $1E, $ff
 GEM_ADDRESS_LVL_10:
-    .byte $AA, $1E, $25, $1F, $D5, $1F, $ff
+    .byte $B7, $1E, $78, $1F, $DD, $1F, $ff
 SECOND_PORTAL_LVL_10:
-    .byte $29, $1F, $ff
+    .byte $D9, $1F, $ff
 SPAWN_ADDRESS_LVL_10:
-    .byte $27, $1F, $ff
+    .byte $D6, $1F, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_10:
-    .byte $E0, $1E, $4, $81, $1F, $4, $ff
+    .byte $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_10:
-    .byte $B8, $1E, $9, $3A, $1F, $6, $ff
+    .byte $70, $1E, $2, $88, $1E, $1, $9F, $1E, $1, $B6, $1E, $1, $CD, $1E, $1, $8D, $1F, $2, $ff
 
 ;--------------------------------------- LEVEL 11 ---------------------------
 FIRST_PORTAL_LVL_11:
-    .byte $5A, $1E, $ff
+    .byte $52, $1F, $ff
 GEM_ADDRESS_LVL_11:
-    .byte $B7, $1E, $78, $1F, $DD, $1F, $ff
+    .byte $8C, $1E, $54, $1F, $DA, $1F, $ff
 SECOND_PORTAL_LVL_11:
-    .byte $D9, $1F, $ff
+    .byte $8A, $1E, $ff
 SPAWN_ADDRESS_LVL_11:
-    .byte $D6, $1F, $ff
+    .byte $88, $1E, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_11:
-    .byte $ff
+    .byte $96, $1F, $4, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_11:
-    .byte $70, $1E, $2, $88, $1E, $1, $9F, $1E, $1, $B6, $1E, $1, $CD, $1E, $1, $8D, $1F, $2, $ff
+    .byte $9E, $1E, $6, $64, $1F, $7, $ff
 
 ;--------------------------------------- LEVEL 12 ---------------------------
 FIRST_PORTAL_LVL_12:
-    .byte $52, $1F, $ff
+    .byte $D1, $1F, $ff
 GEM_ADDRESS_LVL_12:
-    .byte $8C, $1E, $54, $1F, $DA, $1F, $ff
+    .byte $C9, $1E, $AD, $1F, $CF, $1F, $ff
 SECOND_PORTAL_LVL_12:
-    .byte $8A, $1E, $ff
+    .byte $C7, $1E, $ff
 SPAWN_ADDRESS_LVL_12:
-    .byte $88, $1E, $ff
+    .byte $30, $1E, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_12:
-    .byte $96, $1F, $4, $ff
+    .byte $FB, $1E, $3, $BE, $1F, $2, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_12:
-    .byte $9E, $1E, $6, $64, $1F, $7, $ff
+    .byte $46, $1E, $4, $DD, $1E, $4, $C0, $1F, $6, $ff
 
 ;--------------------------------------- LEVEL 13 ---------------------------
 FIRST_PORTAL_LVL_13:
-    .byte $32, $1E, $ff
+    .byte $E0, $1F, $ff
 GEM_ADDRESS_LVL_13:
-    .byte $30, $1E, $A5, $1E, $D2, $1F, $ff
+    .byte $71, $1E, $5B, $1F, $6A, $1F, $ff
 SECOND_PORTAL_LVL_13:
-    .byte $DD, $1F, $ff
+    .byte $52, $1E, $ff
 SPAWN_ADDRESS_LVL_13:
-    .byte $D7, $1F, $ff
+    .byte $7C, $1E, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_13:
-    .byte $38, $1F, $3, $82, $1F, $3, $ff
+    .byte $05, $1F, $1, $77, $1F, $2, $97, $1F, $6, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_13:
-    .byte $46, $1E, $4, $B8, $1E, $4, $3B, $1F, $1, $ff
+    .byte $87, $1E, $0C, $9D, $1E, $1, $A9, $1E, $1, $B2, $1E, $2, $C8, $1E, $1, $D6, $1E, $1, $D8, $1E, $3, $F3, $1E, $2, $F6, $1E, $6, $FD, $1E, $3, $00, $1F, $2, $04, $1F, $1, $79, $1F, $5, $7F, $1F, $2, $9D, $1F, $1, $ff
 
 ;--------------------------------------- LEVEL 14 ---------------------------
 FIRST_PORTAL_LVL_14:
-    .byte $D1, $1F, $ff
+    .byte $52, $1E, $ff
 GEM_ADDRESS_LVL_14:
-    .byte $C9, $1E, $AD, $1F, $CF, $1F, $ff
+    .byte $54, $1E, $77, $1E, $DA, $1F, $ff
 SECOND_PORTAL_LVL_14:
-    .byte $C7, $1E, $ff
+    .byte $75, $1E, $ff
 SPAWN_ADDRESS_LVL_14:
-    .byte $30, $1E, $ff
+    .byte $4B, $1E, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_14:
-    .byte $FB, $1E, $3, $BE, $1F, $2, $ff
+    .byte $E4, $1E, $2, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_14:
-    .byte $46, $1E, $4, $DD, $1E, $4, $C0, $1F, $6, $ff
+    .byte $59, $1E, $3, $5D, $1E, $5, $66, $1E, $5, $86, $1E, $9, $9C, $1E, $1, $B2, $1E, $1, $DD, $1E, $7, $E6, $1E, $2, $2B, $1F, $6, $3F, $1F, $3, $66, $1F, $8, $7A, $1F, $1, $7C, $1F, $1, $83, $1F, $1, $91, $1F, $1, $99, $1F, $2, $9C, $1F, $1, $B0, $1F, $2, $ff
 
 ;--------------------------------------- LEVEL 15 ---------------------------
 FIRST_PORTAL_LVL_15:
-    .byte $E0, $1F, $ff
+    .byte $32, $1E, $ff
 GEM_ADDRESS_LVL_15:
-    .byte $45, $1E, $19, $1F, $28, $1F, $ff
+    .byte $30, $1E, $A5, $1E, $D2, $1F, $ff
 SECOND_PORTAL_LVL_15:
-    .byte $26, $1E, $ff
+    .byte $DD, $1F, $ff
 SPAWN_ADDRESS_LVL_15:
-    .byte $50, $1E, $ff
+    .byte $D7, $1F, $ff
 START_ADDRESS_DANGER_PLATFORM_LVL_15:
-    .byte $D9, $1E, $1, $35, $1F, $2, $55, $1F, $6, $ff
+    .byte $38, $1F, $3, $82, $1F, $3, $ff
 START_ADDRESS_NORMAL_PLATFORM_LVL_15:
-    .byte $5B, $1E, $0C, $71, $1E, $1, $7D, $1E, $1, $86, $1E, $2, $9C, $1E, $1, $AA, $1E, $1, $AC, $1E, $3, $C7, $1E, $2, $CA, $1E, $6, $D1, $1E, $6, $D8, $1E, $1, $37, $1F, $5, $3D, $1F, $2, $5B, $1F, $1, $ff
+    .byte $46, $1E, $4, $B8, $1E, $4, $3B, $1F, $1, $ff
+
+
+;--------------------------------------- LEVEL 16 ---------------------------
+FIRST_PORTAL_LVL_16:
+    .byte $D3, $1F, $ff
+GEM_ADDRESS_LVL_16:
+    .byte $5B, $1E, $69, $1E, $97, $1F, $ff
+SECOND_PORTAL_LVL_16:
+    .byte $3B, $1E, $ff
+SPAWN_ADDRESS_LVL_16:
+    .byte $35, $1E, $ff
+START_ADDRESS_DANGER_PLATFORM_LVL_16:
+    .byte $CA, $1E, $1, $E8, $1E, $1, $2D, $1F, $1, $5A, $1F, $1, $5C, $1F, $1, $B4, $1F, $1, $B6, $1F, $1, $ff
+START_ADDRESS_NORMAL_PLATFORM_LVL_16:
+    .byte $47, $1E, $5, $4D, $1E, $5, $71, $1E, $4, $76, $1E, $3, $7D, $1E, $5, $8C, $1E, $1, $9B, $1E, $3, $A0, $1E, $3, $BD, $1E, $3, $C3, $1E, $2, $C9, $1E, $1, $CB, $1E, $2, $E7, $1E, $1, $E9, $1E, $1, $EC, $1E, $1, $F3, $1E, $2, $04, $1F, $1, $0E, $1F, $2, $1B, $1F, $1, $2F, $1F, $1, $38, $1F, $2, $3B, $1F, $1, $3D, $1F, $1, $56, $1F, $3, $5B, $1F, $1, $5E, $1F, $1, $84, $1F, $2, $87, $1F, $3, $8F, $1F, $1, $A3, $1F, $1, $A6, $1F, $1, $AD, $1F, $6, $B5, $1F, $1, $D0, $1F, $1, $D4, $1F, $1, $DB, $1F, $1, $ff
+
+;--------------------------------------- LEVEL 17 ---------------------------
+FIRST_PORTAL_LVL_17:
+    .byte $D8, $1F, $ff
+GEM_ADDRESS_LVL_17:
+    .byte $54, $1E, $B5, $1E, $7C, $1F, $ff
+SECOND_PORTAL_LVL_17:
+    .byte $52, $1E, $ff
+SPAWN_ADDRESS_LVL_17:
+    .byte $23, $1E, $ff
+START_ADDRESS_DANGER_PLATFORM_LVL_17:
+    .byte $3F, $1F, $1, $45, $1F, $3, $83, $1F, $1, $ff
+START_ADDRESS_NORMAL_PLATFORM_LVL_17:
+    .byte $2F, $1E, $11, $5A, $1E, $1, $5D, $1E, $5, $63, $1E, $5, $69, $1E, $2, $71, $1E, $1, $76, $1E, $2, $7D, $1E, $3, $85, $1E, $1, $97, $1E, $1, $A6, $1E, $8, $C9, $1E, $3, $E7, $1E, $1, $F4, $1E, $1, $0B, $1F, $1, $1F, $1F, $1, $21, $1F, $6, $28, $1F, $1, $40, $1F, $2, $43, $1F, $1, $61, $1F, $4, $68, $1F, $4, $84, $1F, $3, $88, $1F, $1, $8A, $1F, $1, $91, $1F, $2, $9B, $1F, $1, $9F, $1F, $1, $D5, $1F, $1, $DF, $1F, $1, $ff
+
 ;--------------------------------------- GAME TABLES ---------------------------
 FIRST_PORTAL_TABLE:
     .word FIRST_PORTAL_LVL_1
@@ -597,6 +627,8 @@ FIRST_PORTAL_TABLE:
     .word FIRST_PORTAL_LVL_13
     .word FIRST_PORTAL_LVL_14
     .word FIRST_PORTAL_LVL_15
+    .word FIRST_PORTAL_LVL_16
+    .word FIRST_PORTAL_LVL_17
 
 GEM_ADDRESS_TABLE:
     .word GEM_ADDRESS_LVL_1
@@ -614,6 +646,8 @@ GEM_ADDRESS_TABLE:
     .word GEM_ADDRESS_LVL_13
     .word GEM_ADDRESS_LVL_14
     .word GEM_ADDRESS_LVL_15
+    .word GEM_ADDRESS_LVL_16
+    .word GEM_ADDRESS_LVL_17
 
 SECOND_PORTAL_TABLE:
     .word SECOND_PORTAL_LVL_1
@@ -631,6 +665,8 @@ SECOND_PORTAL_TABLE:
     .word SECOND_PORTAL_LVL_13
     .word SECOND_PORTAL_LVL_14
     .word SECOND_PORTAL_LVL_15
+    .word SECOND_PORTAL_LVL_16
+    .word SECOND_PORTAL_LVL_17
 
 SPAWN_ADDRESS_TABLE:
     .word SPAWN_ADDRESS_LVL_1
@@ -648,6 +684,8 @@ SPAWN_ADDRESS_TABLE:
     .word SPAWN_ADDRESS_LVL_13
     .word SPAWN_ADDRESS_LVL_14
     .word SPAWN_ADDRESS_LVL_15
+    .word SPAWN_ADDRESS_LVL_16
+    .word SPAWN_ADDRESS_LVL_17
 
 START_ADDRESS_DANGER_PLATFORM_TABLE:
     .word START_ADDRESS_DANGER_PLATFORM_LVL_1
@@ -665,6 +703,8 @@ START_ADDRESS_DANGER_PLATFORM_TABLE:
     .word START_ADDRESS_DANGER_PLATFORM_LVL_13
     .word START_ADDRESS_DANGER_PLATFORM_LVL_14
     .word START_ADDRESS_DANGER_PLATFORM_LVL_15
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_16
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_17
 
 
 START_ADDRESS_NORMAL_PLATFORM_TABLE:
@@ -683,6 +723,8 @@ START_ADDRESS_NORMAL_PLATFORM_TABLE:
     .word START_ADDRESS_NORMAL_PLATFORM_LVL_13
     .word START_ADDRESS_NORMAL_PLATFORM_LVL_14
     .word START_ADDRESS_NORMAL_PLATFORM_LVL_15
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_16
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_17
 ;--------------------------------------- DATA TABLES END ---------------------------
 DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
@@ -1385,9 +1427,9 @@ no_trigger:
         CLC        
         jsr GETIN                    ; Get key input
         beq loop                     ; If no key, continue loop
-        cmp #'J                     ; Check if 'J' was pressed (move left)
+        cmp #'A                     ; Check if 'J' was pressed (move left)
         beq moveleft
-        cmp #'L                     ; Check if 'L' was pressed (move right)
+        cmp #'D                     ; Check if 'L' was pressed (move right)
         beq moveright
         cmp #'R                     ; Check if 'R' was pressed (reset the level)
         beq goto_start_level
@@ -1569,6 +1611,9 @@ no_carry:
     BEQ char_died
     
     CMP #BORDER_CHAR              
+    BEQ invalid_move
+
+    CMP #01             
     BEQ invalid_move
 
     cmp #$0b                    ; door handle char
