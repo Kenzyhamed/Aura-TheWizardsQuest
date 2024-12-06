@@ -143,26 +143,26 @@ int main()
     std::map<std::string, std::vector<std::string>> tables;
 
     // Call the method for each array with unique numbers
-    // processAndPrintAddresses(array2, length2, baseAddress, 1);
-    // processAndPrintAddresses(array2, length2, baseAddress, 2);
-    // processAndPrintAddresses(array3, length2, baseAddress, 3);
-    // processAndPrintAddresses(array1, length1, baseAddress, 1);
-    // processAndPrintAddresses(array2, length2, baseAddress, 2);
-    // processAndPrintAddresses(array3, length2, baseAddress, 3);
-    // processAndPrintAddresses(array4, length2, baseAddress, 4);
-    // processAndPrintAddresses(array5, length2, baseAddress, 5);
-    // processAndPrintAddresses(array6, length2, baseAddress, 6);
-    // processAndPrintAddresses(array7, length2, baseAddress, 7);
-    // processAndPrintAddresses(array8, length2, baseAddress, 8);
-    // processAndPrintAddresses(array9, length2, baseAddress, 9);
-    // processAndPrintAddresses(array10, length2, baseAddress, 10);
-    // processAndPrintAddresses(array11, length2, baseAddress, 11);
-    // processAndPrintAddresses(array12, length2, baseAddress, 12);
-    // processAndPrintAddresses(array13, length2, baseAddress, 13);
-    // processAndPrintAddresses(array14, length2, baseAddress, 14);
-    // processAndPrintAddresses(array15, length2, baseAddress, 15);
-    // processAndPrintAddresses(array16, length2, baseAddress, 16);
-    // processAndPrintAddresses(array17, length2, baseAddress, 17);
+    processAndPrintAddresses(array2, length2, baseAddress, 1);
+    processAndPrintAddresses(array2, length2, baseAddress, 2);
+    processAndPrintAddresses(array3, length2, baseAddress, 3);
+    processAndPrintAddresses(array1, length1, baseAddress, 1);
+    processAndPrintAddresses(array2, length2, baseAddress, 2);
+    processAndPrintAddresses(array3, length2, baseAddress, 3);
+    processAndPrintAddresses(array4, length2, baseAddress, 4);
+    processAndPrintAddresses(array5, length2, baseAddress, 5);
+    processAndPrintAddresses(array6, length2, baseAddress, 6);
+    processAndPrintAddresses(array7, length2, baseAddress, 7);
+    processAndPrintAddresses(array8, length2, baseAddress, 8);
+    processAndPrintAddresses(array9, length2, baseAddress, 9);
+    processAndPrintAddresses(array10, length2, baseAddress, 10);
+    processAndPrintAddresses(array11, length2, baseAddress, 11);
+    processAndPrintAddresses(array12, length2, baseAddress, 12);
+    processAndPrintAddresses(array13, length2, baseAddress, 13);
+    processAndPrintAddresses(array14, length2, baseAddress, 14);
+    processAndPrintAddresses(array15, length2, baseAddress, 15);
+    processAndPrintAddresses(array16, length2, baseAddress, 16);
+    processAndPrintAddresses(array17, length2, baseAddress, 17);
     processAndPrintAddresses(array18, length2, baseAddress, 18);
 
     //

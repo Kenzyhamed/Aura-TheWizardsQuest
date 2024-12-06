@@ -1,5 +1,22 @@
 # **Aura: The Wizard's Quest**  
 
+## Compilation
+#### Not using the emulator
+1. Run `make` in the terminal
+
+There is also a ready made .prg file.
+
+#### Using the emulator
+1. ssh into the CPSC machine
+2. Navigate to ~/www/
+3. Run `mkdir AuraTheWizardsQuest` to create a folder
+4. Run `chmod 711 AuraTheWizardsQuest` to update the permissions on the folder
+5. Navigate back to the directiory
+6. Run `make FOR_EMULATOR=1`
+
+- You should be able to run any project via the emulator using (replace [your.username] and [ProjectName] with the correct values)
+https://cspages.ucalgary.ca/~aycock/599.82/vic20/?file=https://cspages.ucalgary.ca/~[your.username]/AuraTheWizardsQuest/[ProjectName].prg
+
 ## **Controls**  
 - **A**: Move left  
 - **D**: Move right  

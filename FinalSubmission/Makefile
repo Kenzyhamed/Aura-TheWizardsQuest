@@ -1,4 +1,4 @@
-ALL	= 	game.prg character.prg
+ALL	= 	game.prg 
 DASM    = 	~aycock/599.82/bin/dasm
 
 all:		$(ALL)
@@ -10,9 +10,6 @@ GameFolder = AuraTheWizardsQuest
 FOR_EMULATOR ?= 0
 
 game.prg:      game.s stub.s
-		$(DASM) $< -o$@ -l$(<:.s=.lst)
-
-character.prg:      character.s stub.s
 		$(DASM) $< -o$@ -l$(<:.s=.lst)
 
 # Handle conditional copying for emulator
