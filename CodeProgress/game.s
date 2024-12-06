@@ -21,6 +21,18 @@ BORDER_CHAR = 18
 TITLE_HAT_CROSSES_CHAR = $56
 TITLE_HAT_CHAR = $66
 GEM_CHAR = $04
+DANGER_PLATFORM_CHAR = $2
+FIRST_PORTAL_CHAR = 16
+SECOND_PORTAL_CHAR = 17   
+DOOR_CHAR = 11
+CUSTOM_THREE = $08
+NORMAL_PLATFORM_CHAR = 01
+BLANK_SPACE_CHAR = 03
+DEAD_X_CHAR = $09  
+RIGHT_BOUNCE_HAT = 14
+LEFT_BOUNCE_HAT =13
+RIGHT_FACING_HAT =12
+LEFT_FACING_HAT = 0
 
 ; Character color variables
 BORDER_COLOR = 6
@@ -908,7 +920,7 @@ draw_bottom_loop:
 start_printing_platforms:
         ldx #$00
         LDA DATA_CHAR
-        CMP #$02
+        CMP #DANGER_PLATFORM_CHAR
         BEQ load_danger_platform
         
 load_normal_platform:
@@ -1060,18 +1072,18 @@ jmp_to_wait_for_input:
 goto_check_platform:
         LDA DATA_CHAR
         
-        CMP #$02
+        CMP #DANGER_PLATFORM_CHAR
         BEQ goto_print_gem
         
-        cmp #$66
+        cmp #TITLE_HAT_CHAR
         beq jmp_to_load_cross
 
-        cmp #$56
+        cmp #TITLE_HAT_CROSSES_CHAR
         beq jmp_to_wait_for_input
         
 jmp_to_start_printing_platforms_after_02:
         LDY #$00
-        LDA #$02
+        LDA #DANGER_PLATFORM_CHAR
         STA DATA_CHAR
         jmp start_printing_platforms
         
@@ -1154,9 +1166,9 @@ continue_color_gem:
 spawn_portal_door:
         ldx #$00
         LDA DATA_CHAR
-        CMP #16
+        CMP #FIRST_PORTAL_CHAR
         BEQ goto_load_second_portal_spawn
-        CMP #17
+        CMP #SECOND_PORTAL_CHAR
         BEQ load_door_top
         CMP #10
         BEQ load_door_bottom
@@ -1178,7 +1190,7 @@ load_first_portal:
         LDY #$00
         LDA #$04
         STA DATA_COLOR
-        LDA #16
+        LDA #FIRST_PORTAL_CHAR
         STA DATA_CHAR,y
         
         LDA (ZP_SRC_ADDR_LO),Y
@@ -1235,7 +1247,7 @@ load_second_portal:
         LDY #$00
         LDA #$06
         STA DATA_COLOR
-        LDA #17
+        LDA #SECOND_PORTAL_CHAR
         STA DATA_CHAR
         rts
 
@@ -1310,16 +1322,19 @@ continue_color_spawn:
         jmp loop
 
 end_screen:
+        ; load family on screen using offset
        ldy #17
-       lda #00
+       lda #LEFT_FACING_HAT
        sta (SCREEN_POS_LO),y
        lda #07
        sta (COLOR_POS_LO),y
+       
        ldy #18
-       lda #00
+       lda #LEFT_FACING_HAT
        sta (SCREEN_POS_LO),y
        lda #03
        sta (COLOR_POS_LO),y
+       
        LDY #$00
        jmp loop
 
@@ -1336,13 +1351,13 @@ return:
     RTS
 
 check_door:
-        cmp #11 
+        cmp #DOOR_CHAR
         BNE return
         TAX
         LDA GEMS_COLLECTED
         
         ; have all 3 gems been collected?
-        CMP #$08
+        CMP #CUSTOM_THREE
         BEQ goto_load_new_level
         TXA
         RTS
@@ -1352,7 +1367,7 @@ goto_load_new_level:
 
 ; --------------------------------------------- GEM CODE ---------------------------------------------------
 check_gem:
-        CMP #$04
+        CMP #GEM_CHAR
         BEQ increment_gem_counter
         RTS
 
@@ -1553,22 +1568,22 @@ no_carry:
     jsr check_gem
     jsr check_door
 
-    CMP #$02                  ; fire platform 
+    CMP #DANGER_PLATFORM_CHAR                 
     BEQ char_died
     
     CMP #BORDER_CHAR              
     BEQ invalid_move
 
-    CMP #01             
+    CMP #NORMAL_PLATFORM_CHAR            
     BEQ invalid_move
 
-    cmp #$0b                    ; door handle char
+    cmp #DOOR_CHAR                
     beq invalid_move
 
-    cmp #16                    
+    cmp #FIRST_PORTAL_CHAR                    
     beq first_portal
  
-    cmp #17                     
+    cmp #SECOND_PORTAL_CHAR                     
     beq second_portal
 
     cmp #00                    
@@ -1610,16 +1625,16 @@ check_under_no_carry:
     LDY #$00
     LDA (SCREEN_POS_LO),Y 
 
-    CMP #$01                 ;  platform 
+    CMP #NORMAL_PLATFORM_CHAR             
     BEQ invalid_move
 
-    CMP #$02                  ; fire platform 
+    CMP #DANGER_PLATFORM_CHAR                
     BEQ char_died
     
     CMP #BORDER_CHAR              
     BEQ invalid_move
 
-    cmp #$0b                    ; door handle char
+    cmp #DOOR_CHAR                    
     beq invalid_move
 
     jsr check_gem
@@ -1650,10 +1665,8 @@ fall_animation:
 
 update_position:
     ; first remove from previous position 
-    LDA #03
+    LDA #BLANK_SPACE_CHAR
     STA (TEMP_SCREEN_POS_LO),y 
-    ;LDA #HAT_COLOR
-    ;STA (COLOR_POS_LO),y
 
     jsr check_under
     
@@ -1676,7 +1689,7 @@ char_died:
        STA COLOR_POS_LO    ; Store the result back into SCREEN_POS_LO
 
 
-       LDA #$09                    ; Load the character code for the blank platform
+       LDA #DEAD_X_CHAR                  ; Load the character code for the blank platform
        STA (SCREEN_POS_LO),y           ; Draw the blank character at the reverted position
       
        LDA #HAT_COLOR
@@ -1728,22 +1741,22 @@ handle_load_bounce_hat:
         lda DIRECTION
         BMI load_left_bounce          ; If negative (e.g., moving left)
         ; load right bounce if not negative        
-        lda #14
+        lda #RIGHT_BOUNCE_HAT
         rts
 
 load_left_bounce:
-        lda #13
+        lda #LEFT_BOUNCE_HAT
         rts
         
 handle_load_hat:
         lda DIRECTION
         BMI load_left_hat
         ; load right hat if not negative
-        lda #12
+        lda #RIGHT_FACING_HAT
         rts
 
 load_left_hat:
-        lda #00
+        lda #LEFT_FACING_HAT
         rts
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
@@ -1905,14 +1918,14 @@ jiffy_delay_fast:
 load_new_level:
     INC LEVEL_COUNTER       ; Increment the level counter
     INC LEVEL_COUNTER
-    LDA #$01
+    LDA #NORMAL_PLATFORM_CHAR
     STA DATA_CHAR
     jmp start_level
 
 trigger_falling_ceiling:
     inc INTERRUPT_COUNTER2
     lda INTERRUPT_COUNTER2
-    cmp #$d0
+    cmp #$d0   
     bne no_trigger2
     jsr init_draw_falling_ceiling
 
