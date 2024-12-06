@@ -1,34 +1,33 @@
         processor 6502
 
 ; TODO: we have used CMP after LDA throughout the code. since LDA sets the condition - we don't need to use CMP after. this needs to be changed. 
-
+; NOTE: PARTIALLY FIXED
 ; KERNEL routines
 CHROUT = $ffd2  
 CLRCHN = $ffcc
 HOME = $ffba
-GETIN = $FFE4      
-; Constants
-GRAVITY = $0220              ; Defines gravity (e.g., 1 pixel per cycle)
-
-; Variables
-JUMP_COUNTER = $0230         ; Tracks how high the character has jumped-X
-JUMPRU_COUNTER=$0250
-DIAGONAL = $0240         ; Tracks how high the character has jumped-Y
+GETIN = $FFE4   
 
 ; Define boundaries for screen position high byte
 SCREEN_MIN_HI = $1E   ; Starting high byte for display memory
 SCREEN_MAX_HI = $1F   ; Adjust to fit your screen's high byte range
 
+SCREEN_CHAR_CODE  = $0230         ; Tracks how high the character has jumped-X
+KEEP_TRACK=$0250
+KEEP=$0256
+OFFSET_TEMP = $0240  
+
+
 ; screen addresses
 SCREEN_START = $1E00 	; Start of screen memory in VIC-20
 SCREEN_WIDTH = 22       ; VIC-20 screen width (22 columns)
 SCREEN_HEIGHT = 23      ; VIC-20 screen height (23 rows)
-COLOR_START = $9600     ; Color memory start    
-COLOR_MEM = $9600       ; TODO: we don't need 2 variables for the same address. we can change the code to use one.
+COLOR_MEM = $9600       ; 
 NEXT_COLOR_MEM = $96FF
 VIC_CHAR_REG = $9005
 
-
+BORDER_CHAR = 18
+;BORDER_CHAR = 18
 
 ; these are the addresses for our custom character set
 CHAR_LOCATION = $1C00
@@ -44,6 +43,12 @@ DEAD_CHAR_LOCATION = $1C48
 DOOR_LOCATION = $1C50
 DOOR_HANDLE_LOCATION = $1C58
 CHAR_RIGHT_LOCATION = #$1C60
+HAT_FALLING_LEFT_LOCATION = $1c68
+HAT_FALLING_RIGHT_LOCATION = $1c70
+HAT_FALLING_LOCATION = $1c78
+FIRST_PORTAL_LOCATION = $1c80
+SECOND_PORTAL_LOCATION = $1c88
+BRICK_LOCATION = $1c90
 
 ; addresses to store counts/variables
 COUNT_FOR_LOOP = $0003
@@ -53,21 +58,26 @@ USE_NEXT_COLOR_MEMORY =  $0006
 SOUND_COUNTER = $0008 
 SOUND_LOOP_COUNT = $0009
 LEVEL_COUNTER = $000A
+DIRECTION = $000B
 
 ; this is a screen memory address to that the count shows on the screen 
 GEMS_COLLECTED = $1E15
 
 ; screen memory variables
+
 SCREEN_POS_LO   = $00   ; Low byte of screen memory address
 SCREEN_POS_HI   = $01   ; High byte of screen memory address
 COLOR_POS_LO    = $02   ; Low byte of color memory address
 COLOR_POS_HI    = $03   ; High byte of color memory address
 TEMP_SCREEN_POS_LO   = $04   ; Low byte of screen memory address
 TEMP_SCREEN_POS_HI   = $05   ; High byte of screen memory address
+ZP_SRC_ADDR_LO = $06  ; Zero-page address for low byte
+ZP_SRC_ADDR_HI = $07  ; Zero-page address for high byte
+PLATFORM_CHAR = $08 
+PLATFORM_COLOR = $09
 
 ; repeated variables
 ; TODO: add variables for all our custom characters
-CHARACTER_VAR = #$DF ; TODO: this isn't printing the correct character. need to look into this and use this instead of repeating DF
 
         org $1001    ; Starting memory location
 
@@ -134,14 +144,22 @@ NORMAL_PLATFORM:
 
 DANGER_PLATFORM:
         ;org DANGER_PLATFORM_LOCATION
-        dc.b %00010000
-        dc.b %00111000
-        dc.b %00111000
-        dc.b %01111100
-        dc.b %01111100
-        dc.b %11111111
-        dc.b %11111111
         dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00100010
+        dc.b %01110111
+        dc.b %11111111
+        dc.b %11111111
+      ;  dc.b %00010000
+       ; dc.b %00111000
+        ;dc.b %00111000
+        ;dc.b %01111100
+        ;dc.b %01111100
+        ;dc.b %11111111
+        ;dc.b %11111111
+        ;dc.b %00000000
 
 BLANK_SPACE:
         ;org BLANK_SPACE_LOCATION
@@ -240,165 +258,281 @@ DOOR_HANDLE:
         dc.b %11111111
         dc.b %11111111
 
+HAT_FALLING_LEFT: 
+        ; squish
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %00001110
+        dc.b %00011000
+        dc.b %00111000
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+
+HAT_FALLING_RIGHT:
+       ; squish
+        dc.b %00000000
+        dc.b %00000000
+        dc.b %01110000
+        dc.b %00011000
+        dc.b %00011100
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+
+HAT_FALLING:
+        dc.b %10010001
+        dc.b %10010001
+        dc.b %10010001
+        dc.b %00011000
+        dc.b %00111000
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+
+FIRST_PORTAL:
+        dc.b %00000000
+        dc.b %00001000
+        dc.b %00011100
+        dc.b %00100010
+        dc.b %01000001
+        dc.b %01000010
+        dc.b %00011100
+        dc.b %00001000
+
+SECOND_PORTAL:
+        dc.b %00000000
+        dc.b %00001000
+        dc.b %00011100
+        dc.b %00100010
+        dc.b %01000001
+        dc.b %01000010
+        dc.b %00011100
+        dc.b %00001000
+
+BRICK:
+        dc.b %11111101
+        dc.b %11111101
+        dc.b %01111000
+        dc.b %00000000
+        dc.b %11110111
+        dc.b %11101111
+        dc.b %00000111
+        dc.b %01111000
+
+        ; this one was rlly good
+     ;   dc.b %11111001
+     ;   dc.b %11111101
+     ;   dc.b %11111000
+     ;   dc.b %00000000
+     ;   dc.b %11101111
+     ;   dc.b %11101111
+     ;   dc.b %00000000
+     ;   dc.b %11111100 
+       ; dc.b %00000010
+       ; dc.b %00000010
+       ; dc.b %00000010
+       ; dc.b %11111111
+       ; dc.b %00010000
+       ; dc.b %00010000
+       ; dc.b %11111111
+       ; dc.b %00000010
+       ; dc.b %11111110
+        ;dc.b %00000001
+        ;dc.b %00000001
+        ;dc.b %11111110
+        ;dc.b %01000000
+        ;dc.b %10000000
+        ;dc.b %01111111
+        ;dc.b %10000000
+
+       ; dc.b %01001001
+       ; dc.b %01001001
+       ; dc.b %11111111
+       ; dc.b %10010010
+       ; dc.b %10010010
+       ; dc.b %11111111
+       ; dc.b %00100100
+       ; dc.b %00100100
+CHAR_JUMPONEL: ;19
+        ;org CHAR_LOCATION
+        dc.b %00011100
+        dc.b %00011010
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %01111110
+        dc.b %01111110
+        dc.b %01111110
+        dc.b %11111111
+CHAR_JUMPTWOL: ;20
+        ;org CHAR_LOCATION
+        dc.b %00011100
+        dc.b %00011010
+        dc.b %00011000
+        dc.b %00111100
+        dc.b %00111100
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+CHAR_JUMPONER: ;21
+        ;org CHAR_LOCATION
+        dc.b %00111000
+        dc.b %01011000
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %01111110
+        dc.b %01111110
+        dc.b %01111110
+        dc.b %11111111
+CHAR_JUMPTWOR: ;22
+        ;org CHAR_LOCATION
+        dc.b %00111000
+        dc.b %01011000
+        dc.b %00011000
+        dc.b %00111100
+        dc.b %00111100
+        dc.b %00111100
+        dc.b %01111110
+        dc.b %11111111
+
+JUMPRIGHT_OFFSETS:
+    .byte $ea, $FF, $ea, $FF ,$EB , $FF, $17, $00, $16, $00, $16, $00
+   
+
+JUMPLEFT_OFFSETS:
+    .byte $ea, $FF, $ea, $FF,$e9, $FF, $15, $00, $16, $00, $16, $00
+
+
+LEVEL_OFFSETS:
+    .byte #00, #02, #04       ; Offsets for levels 2, 3, and 4
+
 ;--------------------------------------- LEVEL 1 DATA ---------------------------
-; TODO: The platforms arrays need to be optimized. Instead of sending in address for each platform block, we will send address for the first block and the next byte wil contain how many blocks are required to be print_danger_platform
-; on the next locations. this would decrease the amount memory used currently. 
-
-; TODO: if the door is being printed at the same loaction then we will need that address only for one level and not for all. 
 
 ; Define the starting address in an array
-START_ADDRESS_NORMAL_PLATFORM:
-    .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+START_ADDRESS_NORMAL_PLATFORM_LVL_1:
+    .byte  $44, $1E, $06, $FF
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM:
-    .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+START_ADDRESS_DANGER_PLATFORM_LVL_1:
+    .byte  $ff
 
-START_ADDRESS_DANGER_PLATFORM:
-    .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+SPAWN_ADDRESS_LVL_1:
+    .byte $30, $1E ; Low byte ($20), High byte ($1E)
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_DANGER_PLATFORM:
-    .byte  $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+FIRST_PORTAL_LVL_1:
+    .byte $fe ; Low byte ($20), High byte ($1E)
 
-SPAWN_ADDRESS:
-    .byte $D5, $1F ; Low byte ($20), High byte ($1E)
+SECOND_PORTAL_LVL_1:
+    .byte $fe ; Low byte ($20), High byte ($1E)
 
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR:
-    .byte $D5, $97 ; Low byte ($20), High byte ($1E)
+GEM_ADDRESS_LVL_1:
+        .byte $26, $1F, $DF, $1F, $E0, $1F, $ff
 
-GEM_ADDRESS:
-        .byte $D1, $1F, $D0, $1F, $E0, $1F, $ff
-
-GEM_ADDRESS_COLOR:
-        .byte $D1, $97, $D0, $97, $E0, $97, $ff 
-
-DOOR_ADDRESS:
+DOOR_TOP_ADDRESS:
         .byte $CC, $1F, $ff
-
-DOOR_COLOR_ADDRESS:
-        .byte $CC, $97, $ff
 
 DOOR_BOTTOM_ADDRESS:
         .byte $E2, $1F, $ff
-
-DOOR_BOTTOM_COLOR_ADDRESS:
-        .byte $E2, $97, $ff
 
 ;--------------------------------------- LEVEL 2 DATA ---------------------------
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_2:
-    .byte $25, $1F, $26, $1F, $27, $1F, $ff, $fe, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff, $fe
+    .byte $37, $1F, $04, $ff 
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_2:
-    .byte $25, $97, $26, $97, $27, $97, $ff, $fe, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff, $fe
+START_ADDRESS_DANGER_PLATFORM_LVL_2:
+    .byte  $57, $1F, $04, $ff 
+
 
 SPAWN_ADDRESS_LVL_2:
-    .byte $10, $1F ; Low byte ($20), High byte ($1E)
+    .byte $20, $1E ; Low byte ($20), High byte ($1E)
 
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR_LVL_2:
-    .byte $10, $97 ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_2:
-        .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
+        .byte $11, $1E, $D9, $1E, $D7, $1F, $ff
 
-GEM_ADDRESS_COLOR_LVL_2:
-        .byte $11, $97, $D0, $97, $E0, $97, $ff 
+FIRST_PORTAL_LVL_2:
+    .byte $2D, $1F ; Low byte ($20), High byte ($1E)
 
-DOOR_ADDRESS_LVL_2:
-        .byte $CC, $1F, $ff
-
-DOOR_COLOR_ADDRESS_LVL_2:
-        .byte $CC, $97, $ff
-
-DOOR_BOTTOM_ADDRESS_LVL_2:
-        .byte $E2, $1F, $ff
-
-DOOR_BOTTOM_COLOR_ADDRESS_LVL_2:
-        .byte $E2, $97, $ff
+SECOND_PORTAL_LVL_2:
+    .byte $D7, $1F ; Low byte ($20), High byte ($1E)
 
 ;--------------------------------------- LEVEL 3 DATA ---------------------------
 
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_3:
-    .byte $2B, $1F, $2C, $1F, $2D, $1F, $B0, $1F, $B1, $1F, $B2, $1F, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff, $fe 
+    .byte $47, $1E, $03, $ff 
 
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_3:
-    .byte $2B, $97, $2C, $97, $2D, $97, $B0, $97, $B1, $97, $B2, $97, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff ,$ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,$ff , $fe 
+START_ADDRESS_DANGER_PLATFORM_LVL_3:
+    .byte  $67, $1E, $07, $87, $1F, $02, $ff 
 
 SPAWN_ADDRESS_LVL_3:
-    .byte $17, $1F ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR_LVL_3:
-    .byte $17, $97 ; Low byte ($20), High byte ($1E)
+    .byte $20, $1F ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_3:
-        .byte $D6, $1F, $9B, $1F, $15, $1F, $ff
+        .byte $11, $1E, $C0, $1F, $10, $1F, $ff
 
-GEM_ADDRESS_COLOR_LVL_3:
-        .byte $D6, $97, $9B, $97, $15, $97, $ff
-
-DOOR_ADDRESS_LVL_3:
-        .byte $CC, $1F, $ff
-
-DOOR_COLOR_ADDRESS_LVL_3:
-        .byte $CC, $97, $ff
-
-DOOR_BOTTOM_ADDRESS_LVL_3:
-        .byte $E2, $1F, $ff
-
-DOOR_BOTTOM_COLOR_ADDRESS_LVL_3:
-        .byte $E2, $97, $ff
 
 ;--------------------------------------- LEVEL 4 DATA ---------------------------
 
-
 ; Define the starting address in an array
 START_ADDRESS_NORMAL_PLATFORM_LVL_4:
-    .byte  $63, $1F, $64, $1F, $65, $1F, $46, $1E, $47, $1E, $48, $1E, $49, $1E, $85, $1E, $86, $1E, $87, $1E, $88, $1E, $8A, $1E, $8B, $1E, $8C, $1E, $8D, $1E, $8E, $1E, $8F, $1E, $90, $1E, $91, $1E, $29, $1F, $2A, $1F, $2B, $1F, $2C, $1F, $2D, $1F, $2E, $1F, $ff ,$fe; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_4:
-    .byte  $63, $97, $64, $97, $65, $97, $46, $96, $47, $96, $48, $96, $49, $96, $85, $96, $86, $96, $87, $96, $88, $96, $8A, $96, $8B, $96, $8C, $96, $8D, $96, $8E, $96, $8F, $96, $90, $96, $91, $96, $29, $97, $2A, $97, $2B, $97, $2C, $97, $2D, $97, $2E, $97, $ff ,$fe; Low byte ($20), High byte ($1E)
+    .byte $17, $1E, $03, $ff 
 
 START_ADDRESS_DANGER_PLATFORM_LVL_4:
-    .byte $3D, $1F, $3E, $1F ,$45, $1F, $46, $1F, $47, $1F, $8B, $1E, $62, $1F, $ff  ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-START_ADDRESS_COLOR_DANGER_PLATFORM_LVL_4:
-    .byte $3D, $97, $3E, $97, $45, $97, $46, $97, $47, $97, $8B, $96, $62, $97, $ff  ; Low byte ($20), High byte ($1E)
+    .byte  $67, $1F, $07, $87, $1F, $02, $ff 
 
 SPAWN_ADDRESS_LVL_4:
-    .byte $31, $1E ; Low byte ($20), High byte ($1E)
-
-; Define the starting address in an array
-SPAWN_ADDRESS_COLOR_LVL_4:
-    .byte $31, $96 ; Low byte ($20), High byte ($1E)
+    .byte $30, $1E ; Low byte ($20), High byte ($1E)
 
 GEM_ADDRESS_LVL_4:
-        .byte $33, $1E, $D0, $1F, $E0, $1F, $ff
+        .byte $11, $1F, $D0, $1F, $E0, $1F, $ff
 
-GEM_ADDRESS_COLOR_LVL_4:
-        .byte $33, $96, $D0, $97, $E0, $97, $ff
 
-DOOR_ADDRESS_LVL_4:
-        .byte $CC, $1F, $ff
+START_ADDRESS_NORMAL_PLATFORM_TABLE:
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_1
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_2
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_3
+    .word START_ADDRESS_NORMAL_PLATFORM_LVL_4
 
-DOOR_COLOR_ADDRESS_LVL_4:
-        .byte $CC, $97, $ff
+START_ADDRESS_DANGER_PLATFORM_TABLE:
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_1
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_2
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_3
+    .word START_ADDRESS_DANGER_PLATFORM_LVL_4
+    
 
-DOOR_BOTTOM_ADDRESS_LVL_4:
-        .byte $E2, $1F, $ff
+JUMP_CHARCODE_TABLE:
+    .byte $0   ; CHAR_JUMPONEL
+    .byte $0   ; CHAR_JUMPONEL
+    .byte $0   ; CHAR_JUMPTWOL
+    .byte $0   ; CHAR_JUMPONEL
+    .byte $0   ; CHAR_JUMPONEL
+    .byte $00   ; Blank/Default (or adjust if this is meant for something specific)
+SPAWN_ADDRESS_TABLE:
+    .word SPAWN_ADDRESS_LVL_1
+    .word SPAWN_ADDRESS_LVL_2
+    .word SPAWN_ADDRESS_LVL_3
+    .word SPAWN_ADDRESS_LVL_4
 
-DOOR_BOTTOM_COLOR_ADDRESS_LVL_4:
-        .byte $E2, $97, $ff
+GEM_ADDRESS_TABLE:
+    .word GEM_ADDRESS_LVL_1
+    .word GEM_ADDRESS_LVL_2
+    .word GEM_ADDRESS_LVL_3
+    .word GEM_ADDRESS_LVL_4
 
+FIRST_PORTAL_TABLE:
+    .word FIRST_PORTAL_LVL_1
+    .word FIRST_PORTAL_LVL_2
+
+SECOND_PORTAL_TABLE:
+    .word SECOND_PORTAL_LVL_1
+    .word SECOND_PORTAL_LVL_2
+
+DOOR_TOP_TABLE:
+    .word DOOR_TOP_ADDRESS
+
+DOOR_BOTTOM_TABLE:
+    .word DOOR_BOTTOM_ADDRESS
 
 
 ; our program starts here
@@ -412,7 +546,6 @@ clear_screen:
 
 ; ----------------------------------- COPY CHAR DATA CODE -----------------------------------
 
-; TODO: the last four lines seem to be repetive for these. make this a subroutine.
         ldx #$00 
 copy_char_data:
         lda CHAR,x              
@@ -518,6 +651,58 @@ copy_door_handle_data:
         bne copy_door_handle_data
         ldx #$00
 
+copy_HAT_FALLING_LEFT_data:
+        lda HAT_FALLING_LEFT,x              
+        sta HAT_FALLING_LEFT_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_HAT_FALLING_LEFT_data       
+
+        ; copy PLATFORM data to $1c08
+        ldx #0
+
+copy_HAT_FALLING_RIGHT_data:
+        lda HAT_FALLING_RIGHT,x              
+        sta HAT_FALLING_RIGHT_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_HAT_FALLING_RIGHT_data       
+
+        ; copy PLATFORM data to $1c08
+        ldx #0
+
+copy_HAT_FALLING_data:
+        lda HAT_FALLING,x              
+        sta HAT_FALLING_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_HAT_FALLING_data       
+        ldx #0
+
+copy_FIRST_PORTAL_data:
+        lda FIRST_PORTAL,x              
+        sta FIRST_PORTAL_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_FIRST_PORTAL_data       
+        ldx #0
+
+copy_SECOND_PORTAL_data:
+        lda SECOND_PORTAL,x              
+        sta SECOND_PORTAL_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_SECOND_PORTAL_data       
+        ldx #0
+
+copy_brick_data:
+        lda BRICK,x              
+        sta BRICK_LOCATION,x     
+        inx                    
+        cpx #8                  
+        bne copy_brick_data   
+        ldx #0
+
 ; -----------------------------------  TITLE SCREEN CODE -----------------------------------
 
 title_screen:
@@ -526,8 +711,6 @@ title_screen:
 
 print_section_one:
         LDA msg,X ;Load character
-
-        CMP #$00 ;Is it 00
         BEQ reset_x 
 
         JSR print
@@ -547,7 +730,6 @@ char_setup:
         LDA hatChar,X
 
 print_section_two:
-        CMP #$00 ;Is it 00
         BEQ color_screen ;If yes move on to coloring the screen
 
         JSR CHROUT
@@ -635,11 +817,18 @@ use_next_color_memory:
 ; ----------------------------------- WAITING FOR A TO PLAY THE GAME -----------------------------------
 
 wait_for_input:
-        LDA #$01
+        JSR title_sound
+
+        LDA #$00
         STA LEVEL_COUNTER
 
+        LDA #$01
+        STA PLATFORM_CHAR
+
+        LDA #$03
+        STA PLATFORM_COLOR
+
         JSR GETIN
-        JSR title_sound
 
         CMP #'A
         BEQ start_level
@@ -650,12 +839,10 @@ wait_for_input:
 ; ----------------------------------- SCREEN CLEAR AFTER INPUT ON TITLE SCREEN -----------------------------------
 
 start_level:
-        JSR sound_off
+        JSR volume_off
 
 	lda #$93
 	jsr CHROUT	                ; Clear the screen
-        LDA #$ff                        ; Load low byte (0xF5)
-        sta VIC_CHAR_REG 
 
         LDA #$05                        ; setting the gem counter to zero
 	STA GEMS_COLLECTED
@@ -667,17 +854,18 @@ start_level:
 
 ; --------------------------------------------- BORDER CODE ---------------------------------------------------
 ; TODO: some of the border code is repetitive. we can make this a subroutine. 
-; Set up the top border
-        lda #$DF                        ; Character to represent the border
+; Set up the top border                     ; Character to represent the border
+        LDA #$ff                        ; Load low byte (0xF5)
+        sta VIC_CHAR_REG 
+        
         ldx #SCREEN_WIDTH               ; Number of characters to print
-        ldy #0                          ; Start at the first screen memory location
+        ldy #0  
 
 draw_top_border:
-
-    	lda #$DF	
+    	lda #BORDER_CHAR  
     	sta SCREEN_START,y              ; Store at the location
-	lda #$04    	                ; Black color for the memory address
-	sta COLOR_START,y
+	lda #$00    	                ; Black color for the memory address
+	sta COLOR_MEM,y
     	iny                             ; Increment Y to move to the next screen position
     	dex                             ; Decrement X (count down the number of characters)
     	bne draw_top_border             ; Check if the x is 0
@@ -688,27 +876,27 @@ draw_top_border:
         sta SCREEN_POS_LO       
         lda #>SCREEN_START              ; Load the high byte of the screen start address
         sta SCREEN_POS_HI       
-	lda #<COLOR_START               ; Load the low byte of the color start address
+	lda #<COLOR_MEM               ; Load the low byte of the color start address
         sta COLOR_POS_LO        
-        lda #>COLOR_START               ; Load the high byte of the color start address
+        lda #>COLOR_MEM               ; Load the high byte of the color start address
         sta COLOR_POS_HI        
 ;Loop to draw the side borders
 draw_side_borders:
     	
-	lda #$DF                        ; Character to represent the side border
+	lda #BORDER_CHAR                        ; Character to represent the side border
 	
     	; Draw the left border at the start of the row
 	ldy #0
 	sta (SCREEN_POS_LO),y           ; Store border character at the leftmost column
-        lda #$04                        ; Set color to black
+        lda #$00                     ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color at the 
 
-        lda #$DF                        ; Character to represent the side border
+        lda #BORDER_CHAR                        ; Character to represent the side border
     	
 	; Draw the right border, offset by 21 visible columns 
         ldy #SCREEN_WIDTH-1             ; Set Y to 21 which is the last right column
         sta (SCREEN_POS_LO),y           ; Store border character 
-        lda #$04                        ; Set color to black
+        lda #$00                        ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color 
 
     	; Increment the screen position by SCREEN_WIDTH so we can go to the next row
@@ -734,14 +922,14 @@ skip_color_high_inc:
 
 ; Draw the bottom border
 draw_bottom_border:
-        lda #$DF                        ; Character to represent the border
+        lda #BORDER_CHAR                        ; Character to represent the border
         ldx #SCREEN_WIDTH               ; Number of characters to print in the bottom row
         ldy #0                          ; Start from the leftmost column of the last row
 
 draw_bottom_loop:
-	lda #$DF
+	lda #BORDER_CHAR
         sta (SCREEN_POS_LO),y           ; Store the border character in each column
-        lda #$04                        ; Set color to black
+        lda #$00                       ; Set color to black
         sta (COLOR_POS_LO),y            ; Store color in the same column
 
         iny                             ; Increment Y to move to the next column
@@ -750,240 +938,219 @@ draw_bottom_loop:
 
 
 ; --------------------------------------------- PLATFORM PRINTING CODE ---------------------------------------------------
-; TODO: This code needs to be optimized. Right now we are getting each location and then printing the charcter, but in the optimized code
-; our string will send the initial location and how many further characters to print. This would save a lot of bytes when loading level data
-; this goes for our platform and gem code.
 
+start_printing_platforms:
         ldx #$00
-        ldy #$00
-
-print_normal_platform:
-        ; Load the starting address into A
-        LDA START_ADDRESS_NORMAL_PLATFORM,x 
-        CMP #$FF                                ; FF is the end character of the byte array
-        BEQ goto_color_normal_platform  
-        STA SCREEN_POS_LO        
-
-        INX
-
-        ; Load the high byte of the starting address
-        LDA START_ADDRESS_NORMAL_PLATFORM,x    
-        STA SCREEN_POS_HI        
-
-        LDA #$01
-        jsr draw_platform
-
-        INX
-              
-        JMP print_normal_platform
-
-goto_color_normal_platform:
-        ldx #$00
-
-color_normal_platform:
-        ; Load the starting address into A
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x  
-        CMP #$FF       
-        BEQ goto_print_danger_platform   
-        STA COLOR_POS_LO       
+        LDA PLATFORM_CHAR
+        CMP #$02
+        BEQ load_danger_platform
         
-        INX            
-        
-        ; Load the high byte of the starting address
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM,x    
-        STA COLOR_POS_HI      
-        
-        LDA #$06
-        jsr color_platform
+load_normal_platform:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
 
-        INX
+      ; Load source address from table
+        LDA START_ADDRESS_NORMAL_PLATFORM_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA START_ADDRESS_NORMAL_PLATFORM_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
-        jmp color_normal_platform
+        LDY #$00
+        LDA #$03
+        STA PLATFORM_COLOR
+        jmp load_print_platform
 
-goto_print_danger_platform:
-        ldx #$00
+load_danger_platform:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
 
-print_danger_platform:
-        ; Load the starting address into A
-        LDA START_ADDRESS_DANGER_PLATFORM,x 
-        CMP #$FF       
-        BEQ goto_color_danger_platform  
-        STA SCREEN_POS_LO        
+      ; Load source address from table
+        LDA START_ADDRESS_DANGER_PLATFORM_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA START_ADDRESS_DANGER_PLATFORM_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
 
-        INX
-
-        ; Load the high byte of the starting address
-        LDA START_ADDRESS_DANGER_PLATFORM,x    
-        STA SCREEN_POS_HI        
-
+        LDY #$00
         LDA #$02
-        jsr draw_platform
+        STA PLATFORM_COLOR
+        jmp load_print_platform
 
-        INX
-              
-        JMP print_danger_platform
+load_print_platform:
+        LDA (ZP_SRC_ADDR_LO),y
+        CMP #$FF                       ; FF indicates the end of the byte array
+        BEQ goto_color_platform  
+        STA SCREEN_POS_LO               ; Load the low byte of the platform start address
+        INY
 
-goto_color_danger_platform:
-        ldx #$00
-
-color_danger_platform:
-        ; Load the starting address into A
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x 
-        CMP #$FF 
-        BEQ goto_print_gem     
-        STA COLOR_POS_LO       
-        
-        INX            
-        
         ; Load the high byte of the starting address
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM,x    
-        STA COLOR_POS_HI      
+        LDA (ZP_SRC_ADDR_LO),y    
+        STA SCREEN_POS_HI  
+
+        INY
+        LDA (ZP_SRC_ADDR_LO),y    
+        STA COUNT_FOR_LOOP              ; Number of platforms to print
+        INY
         
+        JMP print_platform
+
+print_platform:
+        TYA
+        TAX
+        LDY #$00
+        LDA PLATFORM_CHAR                        ; Set platform identifier (or color)
+        JSR draw_platform               ; Call subroutine to draw the platform
+        TXA
+        TAY
+
+        DEC COUNT_FOR_LOOP              ; Decrement COUNT_FOR_LOOP by 1
+        BNE inc_screen_lo_then_draw      ; If COUNT_FOR_LOOP is not zero, draw another platform
+
+        JMP load_print_platform 
+
+inc_screen_lo_then_draw:
+        INC SCREEN_POS_LO
+        JMP print_platform
+
+color_is_96:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_platform    
+        
+
+goto_color_platform:
+        ldy #$00            
+
+load_color_platform:
+        LDA (ZP_SRC_ADDR_LO),y  
+        CMP #$FF                        ; Check if we've reached the end of color data
+        BEQ goto_check_platform  ; Branch if at the end of color data
+        
+        STA COLOR_POS_LO                 ; Load the low byte of the color start address
+        INY                              ; Move to the next byte in the array
+
+        ; Load the high byte of the starting address
+        LDA (ZP_SRC_ADDR_LO),y    
+        CMP #$1E
+        BEQ color_is_96                ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI
+
+continue_color_platform:      
+        INY
+        LDA (ZP_SRC_ADDR_LO),y   ; Number of platforms to color
+        STA COLOR_FOR_LOOP
+        INY
+        
+        JMP color_platform_loop
+
+color_platform_loop:
+        TYA
+        TAX
+        LDY #$00
+        LDA PLATFORM_COLOR                         ; Load color value (modify as needed)
+        JSR color_platform               ; Apply color to platform
+        TXA
+        TAY
+        
+        DEC COLOR_FOR_LOOP         ; Decrement the platform color counter
+        BNE inc_color_lo_then_draw        ; If not zero, continue coloring next platform
+        
+        JMP load_color_platform   ; If zero, go back to load the next color start address
+
+inc_color_lo_then_draw:
+        INC COLOR_POS_LO
+        JMP color_platform_loop
+
+; Set up for printing danger platforms
+goto_check_platform:
+        LDA PLATFORM_CHAR
+        CMP #$01
+        BEQ jmp_to_start_printing_platforms_after_02
+        CMP #$02
+        BEQ goto_print_gem
+
+jmp_to_start_printing_platforms_after_02:
+        LDY #$00
         LDA #$02
-        jsr color_platform
+        STA PLATFORM_CHAR
+        jmp start_printing_platforms
 
-        INX
-
-        jmp color_danger_platform
-
+        
 goto_print_gem:
         ldx #$00
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA GEM_ADDRESS_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA GEM_ADDRESS_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page
+
+        ldy #$00  
 
 print_gem:
         ; Load the starting address into A
-        LDA GEM_ADDRESS,x 
+        LDA (ZP_SRC_ADDR_LO),y
         CMP #$FF       
         BEQ goto_color_gem  
         STA SCREEN_POS_LO        
 
-        INX
+        INY
 
         ; Load the high byte of the starting address
-        LDA GEM_ADDRESS,x    
+        LDA (ZP_SRC_ADDR_LO),y    
         STA SCREEN_POS_HI        
 
-        LDA #$04
-        jsr draw_platform
+        TYA
+        TAX
+        LDY #$00
+        LDA #$04                        ; Load color value (modify as needed)
+        JSR draw_platform               ; Apply color to platform
+        TXA
+        TAY
 
-        INX
+        INY
               
         JMP print_gem
 
+color_is_96_gem:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_gem  
+
 goto_color_gem:
-        ldx #$00
+        ldy #$00
 
 color_gem:
         ; Load the starting address into A
-        LDA GEM_ADDRESS_COLOR,x 
+        LDA (ZP_SRC_ADDR_LO),y  
         CMP #$FF 
-        BEQ goto_print_door_top   
+        BEQ spawn_portal_door   
         STA COLOR_POS_LO       
         
-        INX            
+        INY            
         
         ; Load the high byte of the starting address
-        LDA GEM_ADDRESS_COLOR,x    
-        STA COLOR_POS_HI      
-        
-        LDA #$07
-        jsr color_platform
+        LDA (ZP_SRC_ADDR_LO),y 
+        CMP #$1E
+        BEQ color_is_96_gem               ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI     
 
-        INX
+continue_color_gem:
+        TYA
+        TAX
+        LDY #$00
+        LDA #$07                        ; Load color value (modify as needed)
+        JSR color_platform               ; Apply color to platform
+        TXA
+        TAY
+
+        INY
 
         jmp color_gem
 
-
-goto_print_door_top:
-        ldx #$00
-
-print_door_top:
-        ; Load the starting address into A
-        LDA DOOR_ADDRESS,x 
-        CMP #$FF       
-        BEQ goto_color_door_top
-        STA SCREEN_POS_LO        
-
-        INX
-
-        ; Load the high byte of the starting address
-        LDA DOOR_ADDRESS,x    
-        STA SCREEN_POS_HI        
-
-        LDA #$0A
-        jsr draw_platform
-
-        INX
-              
-        JMP print_door_top
-
-goto_color_door_top:
-        ldx #$00
-
-color_door_top:
-        ; Load the starting address into A
-        LDA DOOR_COLOR_ADDRESS,x 
-        CMP #$FF 
-        BEQ goto_print_door_bottom     
-        STA COLOR_POS_LO       
-        
-        INX            
-        
-        ; Load the high byte of the starting address
-        LDA DOOR_COLOR_ADDRESS,x    
-        STA COLOR_POS_HI      
-        
-        LDA #$05
-        jsr color_platform
-
-        INX
-
-        jmp color_door_top
-
-goto_print_door_bottom:
-        ldx #$00
-
-print_door_bottom:
-        ; Load the starting address into A
-        LDA DOOR_BOTTOM_ADDRESS,x 
-        CMP #$FF       
-        BEQ goto_color_door_bottom
-        STA SCREEN_POS_LO        
-
-        INX
-
-        ; Load the high byte of the starting address
-        LDA DOOR_BOTTOM_ADDRESS,x    
-        STA SCREEN_POS_HI        
-
-        LDA #$0B
-        jsr draw_platform
-
-        INX
-              
-        JMP print_door_bottom
-
-goto_color_door_bottom:
-        ldx #$00
-
-color_door_bottom:
-        ; Load the starting address into A
-        LDA DOOR_BOTTOM_COLOR_ADDRESS,x 
-        CMP #$FF 
-        BEQ char_screen     
-        STA COLOR_POS_LO       
-        
-        INX            
-        
-        ; Load the high byte of the starting address
-        LDA DOOR_BOTTOM_COLOR_ADDRESS,x    
-        STA COLOR_POS_HI      
-        
-        LDA #$05
-        jsr color_platform
-
-        INX
-
-        jmp color_door_bottom
 
 ; --------------------------------------------- GEM CODE ---------------------------------------------------
 
@@ -1003,7 +1170,7 @@ increment_gem_counter_left:
 	STX GEMS_COLLECTED
 
         ; TODO: playing the sound before the gem has been collected feels unnatural. we will need to refactor this code so the sound can be played after
-        ;JSR sound_collect_gem 
+        JSR sound_collect_gem 
 
 	JMP continue_drawing_left
         
@@ -1011,7 +1178,7 @@ increment_gem_counter_hi_left:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-        ;JSR sound_collect_gem
+        JSR sound_collect_gem
 
 	JMP inc_screen_hi_then_draw
 
@@ -1029,7 +1196,7 @@ increment_gem_counter_right:
 	LDX GEMS_COLLECTED
         INX
 	STX GEMS_COLLECTED
-       ; JSR sound_collect_gem
+        JSR sound_collect_gem
 
 	JMP continue_drawing_right
         
@@ -1039,50 +1206,169 @@ increment_gem_counter_hi_right:
         INX
 	STX GEMS_COLLECTED
 
-        ;JSR sound_collect_gem
+        JSR sound_collect_gem
 
 	JMP dec_screen_hi_then_draw
-; --------------------------------------------- SPAWNING CODE ---------------------------------------------------
-; spawning code prints the character at the spawn location
-char_screen:
-; point VIC to use custom character set
-        LDA #$ff                  
-        sta VIC_CHAR_REG 
-
+; --------------------------------------------- SPAWNING PORTAL DOOR CODE ---------------------------------------------------
+spawn_portal_door:
         ldx #$00
+        LDA PLATFORM_CHAR
+        CMP #16
+        BEQ goto_load_second_portal_spawn
+        CMP #17
+        BEQ load_door_top
+        CMP #10
+        BEQ load_door_bottom
+        CMP #11
+        BEQ load_spawn
+        jsr load_first_portal
+        jmp char_screen
+        
+jmp_spawn_portal_door:
+        jmp spawn_portal_door
+load_first_portal:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
 
-        LDA SPAWN_ADDRESS_COLOR,x 
+      ; Load source address from table
+        LDA FIRST_PORTAL_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA FIRST_PORTAL_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
+        LDA #$04
+        STA PLATFORM_COLOR
+        LDA #16
+        STA PLATFORM_CHAR,y
+        
+        LDA (ZP_SRC_ADDR_LO),Y
+        CMP #$FE
+        BEQ jmp_spawn_portal_door
+        rts
+
+load_door_top:
+        LDY #$00
+
+      ; Load source address from table
+        LDA DOOR_TOP_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA DOOR_TOP_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDA #$05
+        STA PLATFORM_COLOR
+        LDA #10
+        STA PLATFORM_CHAR,y
+
+        LDA (ZP_SRC_ADDR_LO),Y
+        CMP #$FE
+        BEQ jmp_spawn_portal_door
+        jmp char_screen
+
+load_door_bottom:
+        LDY #$00
+
+      ; Load source address from table
+        LDA DOOR_BOTTOM_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA DOOR_BOTTOM_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDA #11
+        STA PLATFORM_CHAR,y
+        jmp char_screen
+
+goto_load_second_portal_spawn:
+        jsr load_second_portal
+        jmp char_screen
+
+load_second_portal:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA SECOND_PORTAL_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA SECOND_PORTAL_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
+        LDA #$06
+        STA PLATFORM_COLOR
+        LDA #17
+        STA PLATFORM_CHAR
+        rts
+
+load_spawn:
+        LDA LEVEL_COUNTER   ; Load the value at LEVEL_COUNTER into the accumulator
+        TAY                 ; Transfer the accumulator's value into the Y register
+
+      ; Load source address from table
+        LDA SPAWN_ADDRESS_TABLE,Y
+        STA ZP_SRC_ADDR_LO            ; Store low byte in zero page
+        LDA SPAWN_ADDRESS_TABLE+1,Y
+        STA ZP_SRC_ADDR_HI            ; Store high byte in zero page  
+
+        LDY #$00
+        LDA #$00
+        STA PLATFORM_COLOR
+        LDA #$00
+        STA PLATFORM_CHAR
+        jmp char_screen
+
+char_screen:
+        LDA (ZP_SRC_ADDR_LO),y
         STA COLOR_POS_LO        
 
-        INX     
+        INY    
         
         ; Load the high byte of the starting address
-        LDA SPAWN_ADDRESS_COLOR,x   
-        STA COLOR_POS_HI      
+        LDA (ZP_SRC_ADDR_LO),y   
+        CMP #$1E
+        BEQ color_is_96_spawn               ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI  
 
-        LDA #$00
+continue_color_spawn:
+        LDY #$00
+        LDA PLATFORM_COLOR
         jsr color_platform
-        ldx #$00
+       
+        ldy #$00
 
         ; Load the starting address into A
-        LDA SPAWN_ADDRESS,x       
+        LDA (ZP_SRC_ADDR_LO),y       
         STA SCREEN_POS_LO        
       
-        INX
+        INY
 
         ; Load the high byte of the starting address
-        LDA SPAWN_ADDRESS,x    
+        LDA (ZP_SRC_ADDR_LO),y    
         STA SCREEN_POS_HI        
 
-        LDA #$00
-        jsr draw_platform
+        LDY #$00
+        LDA PLATFORM_CHAR                       ; Set platform identifier (or color)
+        JSR draw_platform               ; Call subroutine to draw the platform
 
+
+        LDA PLATFORM_CHAR
+        CMP #$00
+        BNE goto_spawn_portal_door
 
       	LDA #$05
 	STA GEMS_COLLECTED
 
         LDX #$00
+        LDY #$00
         jmp loop
+; spawning code prints the character at the spawn location
+color_is_96_spawn:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_color_spawn 
+goto_spawn_portal_door:
+        jmp spawn_portal_door
 
 ; --------------------------------------------- DOOR TO NEXT LEVEL CODE ---------------------------------------------------
 return:
@@ -1105,38 +1391,147 @@ goto_load_new_level:
 
 ; this loop waits for the input from the 
 loop:
-        CLC
+        CLC        
         jsr GETIN                    ; Get key input
-        cmp #$00                     ; Check if no key was pressed
         beq loop                     ; If no key, continue loop
         cmp #'J                     ; Check if 'J' was pressed (move left)
         beq moveleft
-        cmp #$20                     ; Check if 'J' was pressed (move left)
-        beq jumpup
-        cmp #'M                     ; Check if 'J' was pressed (move left)
-        beq jumpright
         cmp #'L                     ; Check if 'L' was pressed (move right)
         beq moveright
         cmp #'R                     ; Check if 'R' was pressed (reset the level)
         beq goto_start_level
+        cmp #'M                    ; Check if 'M' was pressed (jumpright)
+        beq jumpright
+        cmp #'N                    ; Check if 'M' was pressed (jumpright)
+        beq jumpleft
         jmp loop                     ; Continue the loop if no recognized key
+
+moveright:
+        lda #$00
+        sta DIRECTION
+        jsr draw_right
+        jmp loop
+        
+moveleft:
+        lda #$01
+        sta DIRECTION
+        jsr draw_left
+        jmp loop
+
+jumpright:
+        lda #$00
+        sta DIRECTION
+        jmp JumpLoop
+        
+jumpleft:
+        lda #$01
+        sta DIRECTION
+        jmp JumpLoop
+
 goto_start_level:
         jmp start_level
-moveright:
-        jsr draw_right
-        jsr color_char
-        jmp loop       
-moveleft:
-        jsr draw_left
-        jsr color_char          ; TODO: i think we can remove this
-        jmp loop
+DelayRoutine:
+    LDX #$15               ; Outer loop counter
+OuterLoop:
+    LDY #$FF               ; Inner loop counter
+InnerLoop:
+    DEY                    ; Decrement Y
+    BNE InnerLoop          ; Repeat until Y reaches 0
+    DEX                    ; Decrement X
+    BNE OuterLoop          ; Repeat until X reaches 0
+    RTS                    ; Return from subroutine
+
+erease:
+        ldy #$00
+        lda #$03              
+        jsr draw_platform     
+        rts
+JumpLoop:
+    LDA #$00
+    STA KEEP_TRACK           ; Initialize the index tracker
+    LDA #$00
+    STA KEEP
+
+JumpLoopR:
+        jsr erease
+        lda DIRECTION
+        cmp #01
+        beq left
+    ; --- Fetch 16-bit Offset ---          
+        LDX KEEP_TRACK           
+        LDA JUMPRIGHT_OFFSETS,X  ; Load the low byte of the offset
+        STA OFFSET_TEMP          ; Store the low byte in a temporary location
+
+        INX                      ; Increment X to point to the high byte
+        LDA JUMPRIGHT_OFFSETS,X  ; Load the high byte of the offset
+        STA OFFSET_TEMP+1        ; Store the high byte in a temporary location
+        jmp continue
+left:
+        LDX KEEP_TRACK           
+        LDA JUMPLEFT_OFFSETS,X  ; Load the low byte of the offset
+        STA OFFSET_TEMP          ; Store the low byte in a temporary location
+
+        INX                      ; Increment X to point to the high byte
+        LDA JUMPLEFT_OFFSETS,X  ; Load the high byte of the offset
+        STA OFFSET_TEMP+1        ; Store the high byte in a temporary location
+continue:
+        ; Perform 16-bit addition as before
+        LDA SCREEN_POS_LO
+        CLC
+        ADC OFFSET_TEMP
+        STA SCREEN_POS_LO
+
+        LDA SCREEN_POS_HI
+        ADC OFFSET_TEMP+1
+        STA SCREEN_POS_HI
+
+        ; Move to the next offset
+        INX                      ; Increment X to the next low byte
+        STX KEEP_TRACK           ; Update KEEP_TRACK with the new index
+         ; --- Draw Character at New Position ---
+    LDX KEEP
+    LDA JUMP_CHARCODE_TABLE,X ; Load the character code for this frame
+    STA SCREEN_CHAR_CODE          ; Store the character code at the screen position
+
+
+    LDY #$00                      ; Reset Y index
+    LDA SCREEN_CHAR_CODE          ; Load the character code
+    JSR draw_platform             ; Draw the character at the updated position
+   ; --- Update Color Memory ---
+    LDA SCREEN_POS_LO           ; Load low byte of screen position
+    CLC                         ; Clear carry for addition
+    ADC #$00                    ; Add low byte of $7800
+    STA COLOR_POS_LO            ; Store the low byte of the color position
+
+    LDA SCREEN_POS_HI           ; Load high byte of screen position
+    ADC #$78                    ; Add high byte of $7800
+    STA COLOR_POS_HI            ; Store the high byte of the color position
+
+    ; Step 2: Write color to the calculated address
+    LDY #$00                    ; Reset Y index for indirect addressing
+    LDA #$00                    ; Load the desired color (e.g., red)
+    STA (COLOR_POS_LO),Y      ; Write color to the calculated color memory address
+
+    
+    INX
+    STX KEEP
+    ; --- Delay ---
+    JSR DelayRoutine        ; Call a delay subroutine 
+
+    ; --- Increment to the Next Frame ---                  
+    lda KEEP_TRACK
+    cmp #$0c              
+    bne JumpLoopR           
+
+   jmp loop
+
+
 
 draw_left:
         CLC
         ldy #$00
 
         lda SCREEN_POS_LO,y
-        cmp #$00                ; Check if SCREEN_POS_LO has underflowed to $FF
         beq dec_hi_byte_dummy   ; If SCREEN_POS_LO didn't overflow, skip high byte increment
 
         dec SCREEN_POS_LO
@@ -1156,9 +1551,11 @@ decremented_screen_hi:
         cmp #$03 
         beq inc_screen_hi_then_draw
         cmp #$20 
-        beq inc_screen_hi_then_draw
-        cmp #$02 
-        beq inc_screen_hi_then_die
+        beq inc_screen_hi_then_draw       
+        cmp #16 
+        beq goto_inc_lo_then_first_portal_hit
+        cmp #17
+        beq goto_inc_lo_then_second_portal_hit
 
         inc SCREEN_POS_LO
         inc SCREEN_POS_HI
@@ -1169,10 +1566,6 @@ inc_screen_hi_then_draw:
         inc SCREEN_POS_HI
         jmp continue_drawing_left
 
-inc_screen_hi_then_die:
-        inc SCREEN_POS_HI
-        jmp char_died_horizontal
-
 skip_decrement_screen_hi:
         ;Load value at new position and compare with blank space
         lda (SCREEN_POS_LO),y      ; Load value at new position
@@ -1182,68 +1575,44 @@ skip_decrement_screen_hi:
         cmp #$03 
         beq continue_drawing_left
         cmp #$20 
-        beq continue_drawing_left
-        cmp #$02 
-        beq char_died_horizontal
+        beq continue_drawing_left       
+        cmp #16 
+        beq goto_inc_lo_then_first_portal_hit
+        cmp #17
+        beq goto_inc_lo_then_second_portal_hit
+
         inc SCREEN_POS_LO
         
         jmp loop
 
-goto_start_level_after_dying:
-        JSR sound_dead
-        ldy #$00
-        jsr DelayLoop
-        jmp start_level
+goto_inc_lo_then_first_portal_hit:
+        inc SCREEN_POS_LO
+        jmp first_portal_hit
 
-        
+goto_inc_lo_hi_then_first_portal_hit:
+        inc SCREEN_POS_LO
+        inc SCREEN_POS_HI
+        jmp first_portal_hit
+
+goto_inc_lo_then_second_portal_hit:
+        inc SCREEN_POS_LO
+        jmp second_portal_hit
+
+goto_inc_lo_hi_then_second_portal_hit:
+        inc SCREEN_POS_LO
+        inc SCREEN_POS_HI
+        jmp second_portal_hit  
+
 continue_drawing_left:
         inc SCREEN_POS_LO
         lda #03 ; blank platform
         jsr draw_platform
 
         lda SCREEN_POS_LO,y
-        cmp #$00            ; Check if SCREEN_POS_LO has underflowed to $FF
         beq dec_screen_hi_byte  ; If SCREEN_POS_LO didn't overflow, skip high byte increment
 
         dec SCREEN_POS_LO
         jmp no_high_increment_left
-
-color_char:
-        LDA SCREEN_POS_LO
-        STA COLOR_POS_LO
-        
-        ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
-        LDA SCREEN_POS_HI         ; Load the high byte of the screen position
-        CMP #$1E                   ; Compare with 1E
-        BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
-        CMP #$1F                   ; Compare with 1F
-        BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
-
-        jsr continue_color
-        rts
-
-continue_color:
-        LDA SCREEN_POS_LO         ; Load the low byte of the screen position
-        STA COLOR_POS_LO          ; Store the low byte in COLOR_POS_LO
-        
-        TYA                             
-        TAX
-        ldy #$00
-        
-        lda #00 ; blank platform
-        jsr color_platform
-
-        TXA
-        CMP #$01       
-        BEQ goto_start_level_after_dying
-        rts
-
-char_died_horizontal:
-        LDA #$09                    
-        jsr draw_platform          
-        ldy #01
-        jsr color_char
-        jmp loop
 
 incremented_screen_hi:
         ; Load value at new position and compare with blank space
@@ -1255,14 +1624,15 @@ incremented_screen_hi:
         beq dec_screen_hi_then_draw
         cmp #$20 
         beq dec_screen_hi_then_draw
-        cmp #$02 
-        beq dec_screen_hi_then_die
+        cmp #16 
+        beq goto_dec_lo_hi_then_first_portal_hit
+        cmp #17 
+        beq goto_dec_lo_hi_then_second_portal_hit
 
         dec SCREEN_POS_LO
         dec SCREEN_POS_HI
         
-        jmp loop
-        
+        jmp loop    
 dec_screen_hi_byte:
         dec SCREEN_POS_HI       
         lda #$ff
@@ -1272,12 +1642,12 @@ dec_screen_hi_byte:
 set_color_hi_96:
         LDA #$96                       
         STA COLOR_POS_HI                
-        jmp continue_color              
+        rts              
 
 set_color_hi_97:
         LDA #$97          
         STA COLOR_POS_HI                   
-        jmp continue_color                        
+        rts                      
 
 draw_right:
         CLC
@@ -1292,9 +1662,6 @@ dec_screen_hi_then_draw:
         dec SCREEN_POS_HI
         jmp continue_drawing_right
 
-dec_screen_hi_then_die:
-        dec SCREEN_POS_HI       
-        jmp char_died_horizontal
 
 skip_increment_screen_hi:
         ; Load value at new position and compare with blank space
@@ -1307,11 +1674,32 @@ skip_increment_screen_hi:
         beq continue_drawing_right
         cmp #$20 
         beq continue_drawing_right
-        cmp #$02 
-        beq char_died_horizontal
+        cmp #16 
+        beq goto_dec_lo_then_first_portal_hit
+        cmp #17
+        beq goto_dec_lo_then_second_portal_hit
+
         dec SCREEN_POS_LO
         
         jmp loop
+
+goto_dec_lo_then_first_portal_hit:
+        dec SCREEN_POS_LO
+        jmp first_portal_hit
+
+goto_dec_lo_hi_then_first_portal_hit:
+        dec SCREEN_POS_LO
+        dec SCREEN_POS_HI
+        jmp first_portal_hit
+
+goto_dec_lo_then_second_portal_hit:
+        dec SCREEN_POS_LO
+        jmp second_portal_hit
+
+goto_dec_lo_hi_then_second_portal_hit:
+        dec SCREEN_POS_LO
+        dec SCREEN_POS_HI
+        jmp second_portal_hit
 
 continue_drawing_right:
         dec SCREEN_POS_LO
@@ -1325,11 +1713,6 @@ continue_drawing_right:
         INC SCREEN_POS_HI
         lda #12
         jsr draw_platform
-        jmp color_right
-
-color_right:
-        LDA #$FF                  
-        STA VIC_CHAR_REG          
 
         ; Check the high byte of SCREEN_POS_HI to set COLOR_POS_HI accordingly
         LDA SCREEN_POS_HI          ; Load the high byte of the screen position
@@ -1337,18 +1720,21 @@ color_right:
         BEQ set_color_hi_96        ; If equal, set COLOR_POS_HI to 96
         CMP #$1F                   ; Compare with 1F
         BEQ set_color_hi_97        ; If equal, set COLOR_POS_HI to 97
-        JMP continue_color
+
+        lda #$00
+        jsr color_platform
+
+        JMP loop
 
 no_high_increment_right:
+        LDX #$00
         jmp check_under_right
 
 no_high_increment_left:
+        LDX #$00
         jmp check_under_left
-
-check_under_right:
-        LDA #$ff                  ; TODO: useless?
-        sta VIC_CHAR_REG 
         
+check_under_right:        
         LDA SCREEN_POS_LO         
         STA TEMP_SCREEN_POS_LO
 
@@ -1356,13 +1742,25 @@ check_under_right:
         CLC                        ; Clear carry for addition
         ADC #$16                   ; Add 0x16 (22 in decimal) to move one block down
         STA SCREEN_POS_LO          ; Update SCREEN_POS_LO to the new position
+        STA COLOR_POS_LO
 
         BCC check_under_no_carry_right     ; Branch if there is no carry (no high byte increment)
+       
         inc SCREEN_POS_HI
+        inc COLOR_POS_HI
+
         jmp check_under_no_carry_right
 
-check_under_no_carry_right:
+goto_increment_gem_then_continue_right_fall:
+        TXA
+        LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED  
+        TAX
+        JSR sound_collect_gem 
+        jmp continue_check_under_no_carry_right
 
+check_under_no_carry_right:
         ldy #00
         ; Check if moving down is valid
         LDA (SCREEN_POS_LO),y ; Load the value at the new position
@@ -1370,20 +1768,70 @@ check_under_no_carry_right:
         BEQ char_died           
         CMP #01                    
         BEQ cannot_move_down_right            
-        CMP #$DF                   
+        CMP #BORDER_CHAR                   
         BEQ cannot_move_down_right       
+        CMP #04
+        BEQ goto_increment_gem_then_continue_right_fall
+            
+
+continue_check_under_no_carry_right:
 
         inx
 
         ; Draw the character at the new position
-        LDA #00   
-        jsr draw_platform           
+        jsr fall_animation
+        
         jmp check_under_right
 
-check_under_left:
-        LDA #$ff                 
-        sta VIC_CHAR_REG 
+cannot_move_down_right:
+        SEC                  ; Set the carry to prepare for subtraction
+        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
+        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
+        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+        STA COLOR_POS_LO
+
+        jmp bounce_animation
+
+bounce_animation:
+        jsr handle_load_bounce_hat 
+        jsr draw_platform
         
+        LDA #$00
+        jsr color_platform
+        
+        jsr jiffy_delay_fast
+        jsr jiffy_delay_fast
+
+        jsr handle_load_hat
+        jsr draw_platform 
+        
+        jmp loop
+
+handle_load_bounce_hat:
+        lda DIRECTION
+        beq load_right_bounce
+
+        ; load left bounce if not equal        
+        lda #14
+        rts
+
+load_right_bounce:
+        lda #13
+        rts
+
+handle_load_hat:
+        lda DIRECTION
+        beq load_right_hat
+        
+        ; load left hat if not equal
+        lda #12
+        rts
+
+load_right_hat:
+        lda #00
+        rts
+
+check_under_left:       
         LDA SCREEN_POS_LO         
         STA TEMP_SCREEN_POS_LO
 
@@ -1391,13 +1839,45 @@ check_under_left:
         CLC                         
         ADC #$16                   
         STA SCREEN_POS_LO          
+        STA COLOR_POS_LO
 
         BCC check_under_no_carry_left    
         inc SCREEN_POS_HI
+        inc COLOR_POS_HI
         jmp check_under_no_carry_left
 
-check_under_no_carry_left:
+char_died:
+        SEC                  ; Set the carry to prepare for subtraction
+        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
+        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
+        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+        STA COLOR_POS_LO    ; Store the result back into SCREEN_POS_LO
 
+        LDA #$09                    ; Load the character code for the blank platform
+        jsr draw_platform          ; Draw the blank character at the reverted position
+        
+        LDA #$00
+        jsr color_platform          
+
+        jmp goto_start_level_after_dying
+
+goto_start_level_after_dying:
+        JSR sound_dead
+        ldy #$00
+        jsr DelayLoop
+        jmp start_level
+
+goto_increment_gem_then_continue_left_fall:
+        TXA
+        LDX GEMS_COLLECTED
+        INX
+	STX GEMS_COLLECTED  
+        TAX
+        JSR sound_collect_gem 
+        jmp continue_check_under_no_carry_left
+
+check_under_no_carry_left:
+        inx
         ldy #00
         ; Check if moving down is valid
         LDA (SCREEN_POS_LO),y ; Load the value at the new position
@@ -1405,171 +1885,276 @@ check_under_no_carry_left:
         BEQ char_died      
         CMP #01                    
         BEQ cannot_move_down_left          
-        CMP #$DF                   
-        BEQ cannot_move_down_left       
+        CMP #BORDER_CHAR                   
+        BEQ cannot_move_down_left  
+        CMP #04
+        BEQ goto_increment_gem_then_continue_left_fall
 
-        inx
-
+continue_check_under_no_carry_left:
         ; Draw the character at the new position
-        LDA #00   
-        jsr draw_platform           
+        jsr fall_animation
         jmp check_under_left
-
-
-cannot_move_down_right:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
-
-        LDA #12                   
-        jsr draw_platform          
-       
-        jsr color_char
-        jmp loop
 
 cannot_move_down_left:
         SEC                  ; Set the carry to prepare for subtraction
         LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
         SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
         STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+        STA COLOR_POS_LO
 
-        LDA #00                  
-        jsr draw_platform         
-       
-        jsr color_char
-        jmp loop
+        jmp bounce_animation
 
-char_died:
-        SEC                  ; Set the carry to prepare for subtraction
-        LDA SCREEN_POS_LO    ; Load the low byte into the accumulator
-        SBC #$16             ; Subtract 0x16 (22 in decimal) from the accumulator
-        STA SCREEN_POS_LO    ; Store the result back into SCREEN_POS_LO
+jiffy_delay_fast:
+        TXA
+        jsr DelayLoop2
+        TAX
+        rts
+    ; Calculate target jiffy time
+   ; LDA $A2            ; Low byte of current jiffy clock
+   ; CLC
+   ; ADC #$04           ; Add a small delay (2 jiffies)
+   ; STA DELAY_LOW      ; Store target low byte
+   ; LDA $A3            ; High byte of current jiffy clock
+   ; ADC #$00           ; Carry over to high byte if necessary
+   ; STA DELAY_HIGH     ; Store target high byte
 
-        LDA #$09                    ; Load the character code for the blank platform
-        jsr draw_platform          ; Draw the blank character at the reverted position
+.wait:
+    ; Wait until the jiffy clock reaches or exceeds the target time
+   ; LDA $A2            ; Current low byte
+   ; CMP DELAY_LOW      ; Compare with target low byte
+   ; LDA $A3            ; Current high byte
+   ; SBC DELAY_HIGH     ; Subtract target high byte
+   ; BCC .wait          ; If not reached, loop
+
+    ;RTS
+
+fall_animation:
+        LDA #15
+        jsr draw_platform
         
-        ldy #01
-        jsr color_char
-        jmp loop
+        LDA #$00
+        jsr color_platform
+        
+        jsr jiffy_delay_fast
 
+        LDA #03
+        jsr draw_platform 
+
+        LDA #$00
+        jsr color_platform
+
+        rts
+
+first_portal_hit:
+        LDA #$03
+        jsr draw_platform
+
+        jsr goto_load_second_portal
+        ldx #$01
+        jmp draw_char_after_portal_hit
+
+second_portal_hit:
+        LDA #$03
+        jsr draw_platform
+        jsr goto_load_first_portal
+        ldx #$00
+        jmp draw_char_after_portal_hit 
+
+goto_load_second_portal:
+        jmp load_second_portal
+
+goto_load_first_portal:
+        jmp load_first_portal
+
+draw_char_after_portal_hit:
+
+        LDA (ZP_SRC_ADDR_LO),y
+        STA COLOR_POS_LO 
+        CPX #$01
+        BEQ goto_inc_color_pos
+        CPX #$00
+        BEQ check_direction_color
+
+continue_portal_movement
+        INY    
+        
+        ; Load the high byte of the starting address
+        LDA (ZP_SRC_ADDR_LO),y   
+        CMP #$1E
+        BEQ color_is_96_portal               ; Store in high byte register
+        LDA #$97
+        STA COLOR_POS_HI  
+
+continue_portal_movement_2:
+        ldy #$00
+
+        ; Load the starting address into A
+        LDA (ZP_SRC_ADDR_LO),y       
+        STA SCREEN_POS_LO        
+        CPX #$01
+        BEQ goto_inc_screen_pos
+        CPX #$00
+        BEQ check_direction_screen
+
+continue_portal_movement_3:
+        INY
+
+        ; Load the high byte of the starting address
+        LDA (ZP_SRC_ADDR_LO),y    
+        STA SCREEN_POS_HI        
+
+        LDX #$00
+        LDY #$00
+        jmp no_high_increment_right
+
+; spawning code prints the character at the spawn location
+color_is_96_portal:
+        LDA #$96
+        STA COLOR_POS_HI
+        jmp continue_portal_movement_2
+
+goto_inc_color_pos:
+        inc COLOR_POS_LO
+        jmp continue_portal_movement
+
+goto_inc_screen_pos:
+        inc SCREEN_POS_LO
+        jmp continue_portal_movement_3
+
+check_direction_color:
+        LDA DIRECTION
+        CMP #$00
+        BEQ goto_dec_color_pos
+        jmp goto_inc_color_pos
+        jmp continue_portal_movement
+
+goto_dec_color_pos:
+        dec COLOR_POS_LO
+        jmp continue_portal_movement
+
+check_direction_screen:
+        LDA DIRECTION
+        CMP #$00
+        BEQ goto_dec_screen_pos
+        jmp goto_inc_screen_pos
+
+goto_dec_screen_pos:
+        dec SCREEN_POS_LO
+        jmp continue_portal_movement_3
 
 
 ; ---------------------------- SOUND EFFECTS ----------------------------
 title_sound:
-        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
-        ;LDA #$05        ; want to set volume to 5
-        ;STA $900E       ; memory location for setting volumne
+	jsr set_volume
 
-	;JSR e_note
-        ;JSR delay_sound  
-        ;JSR sound_off
+        jsr play_f_highest_octave
+        jsr speakers_off
 
-	;JSR g_note
-        ;JSR delay_sound  
-        ;JSR sound_off
+        jsr play_f_highest_octave
+        JSR triple_delay_speakers_off
 
-	;JSR d_note
-        ;JSR delay_sound  
-        ;JSR sound_off
+        jsr play_b_highest_octave
+        jsr speakers_off
+
+        jsr play_f_highest_octave
+        JSR double_triple_delay
+        jsr speakers_off
+
+        jsr play_b_highest_octave
+        JSR double_triple_delay
+        JSR triple_delay_speakers_off
+
+        jsr play_f_highest_octave
+        JSR triple_delay_speakers_off
+
+        jsr play_b_highest_octave
+        jsr speakers_off
+
+        JSR triple_delay
 
         RTS
+
+sound_portal:
+        jsr set_volume
+
+        LDA #$F0       ; wb #241
+        STA $900D      
+
+        ; TODO: do we want to turn the sound off once weve travelled thru to the other side?
+        jsr speakers_off
+        jsr volume_off
+
+	RTS
+
 
 sound_dead:	
-        LDA #$05 	; want to set volume to 5
-        STA $900E	; memory location for setting volumne
+        jsr set_volume
 
-	;LDA #'D
-	;JSR CHROUT
+	JSR play_c_note_low_octave
+     	JSR play_d_note_low_octave
+        JSR play_c_note_low_octave
 
-	JSR c_note
-   	
-     	JSR d_note
-	
-	;JSR c_note
-	
-	;JSR d_note
-	
-	JMP sound_off
+        jsr volume_off
+        RTS
 
 sound_collect_gem:
-        ; TODO: this needs to be improved. this doesn't sound good so it's been commented out for now.
-
-	LDA #$05
-	STA $900E       ; memory location for setting volumne
-
-	LDA #$D7       
-        STA $900B 
-	LDA #$EE       
-        STA $900C      ; Store the value in memory address 36874 ($90B in hex)
-        JSR delay_sound
-        JSR delay_sound
-	
-	LDA #$00
+        jsr set_volume
+        ; Play C#
+        LDA #241
         STA $900C
-	STA $900B
+        jsr speakers_off
+        jsr volume_off
+        rts
 
-        JMP sound_off
+play_f_highest_octave:
+        LDA #163
+        STA $900C       
+        RTS
 
-c_note:
+play_b_highest_octave:
+        LDA #191
+        STA $900C 
+        RTS
+
+play_c_note_low_octave:
 	LDA #$87        
-        STA $900A       ; Store the value in memory address 36874 ($90B in hex)
-	JSR delay_sound
-	
-	LDA #$00
-        STA $900A
-	
+        STA $900A   
+
+        JSR speakers_off
 	RTS
 
-d_note:
+; TODO: if we dont use this anywhere else then we can put it into the sound_dead method
+play_d_note_low_octave:
 	LDA #$93
         STA $900A
-	JSR delay_sound
+	JSR speakers_off
+	RTS
+
+set_volume:
+        LDA #10
+        STA $900E       
+        RTS
+
+triple_delay_speakers_off:
+        JSR triple_delay
+        jsr speakers_off
+        rts
+
+volume_off:
+	LDA #$00
+        STA $900E
+	
+	RTS
+
+speakers_off:
+        JSR triple_delay
 
 	LDA #$00
         STA $900A
-
-	RTS
-
-e_note:
-        LDA #$9F      
         STA $900C
-        JSR loop
+        STA $900D
 
-        LDA #$00
-        STA $900C
-
-        RTS
-
-g_note:
-        LDA #$EB       ; Load the value 135 (87 in hex) into the A register
-        STA $900C
-        JSR loop
-
-        LDA #$00
-        STA $900C
-
-        RTS
-
-delay_sound:
- ; increment the counter
-	LDA SOUND_COUNTER
-        INC SOUND_COUNTER
-
-        CMP #$02	
-	BNE delay_sound
-
-	LDA SOUND_LOOP_COUNT       ; Load LOOP_COUNT
-	INC SOUND_LOOP_COUNT       ; Increment LOOP_COUNT
-	
-	CMP #$01             ; Compare LOOP_COUNT with 1
-	BNE delay_sound        ; If LOOP_COUNT isn't 1, loop again
-
-	RTS
-
-sound_off:
-	LDA #$00
-        STA $900E
+        JSR triple_delay
 	
 	RTS
 ; ---------------------------- DRAW AND COLOR CODE BEING USED AT A FEW PLACES ----------------------------
@@ -1582,8 +2167,25 @@ color_platform:
         STA (COLOR_POS_LO),y    
         rts
 
+triple_delay:
+        JSR DelayLoop2
+        JSR DelayLoop2
+        JSR DelayLoop2
+        RTS
+
+double_triple_delay:
+        JSR triple_delay
+        JSR triple_delay
+        RTS
+
 DelayLoop:
         LDX #$FF                  ; Set up outer loop counter
+        jmp DelayLoopX
+
+DelayLoop2:
+        LDX #$09                  ; Set up outer loop counter
+        jmp DelayLoopX
+             
 DelayLoopX:
         LDY #$FF                  ; Set up inner loop counter
 
@@ -1613,130 +2215,13 @@ DelayLoopY:
 ; call these setup levels using an offset
 
 load_new_level:
-        ; TODO: replace this with the code to load the next level. this is for proof of concept.
-        ldx #$00
-        INC LEVEL_COUNTER
-        LDA LEVEL_COUNTER
-        CMP #$02
-        BEQ copy_lvl2
-        CMP #$03
-        BEQ copy_lvl3
-        CMP #$04
-        BEQ goto_copy_lvl4
-
-        JMP start_level
-
-goto_copy_lvl4:
-        jmp copy_lvl4
-
-goto_start_level_2:
-        ldy #$00
-        ldx #$00
-
-        jsr DelayLoop
-        jmp start_level
-copy_lvl2:
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_2,x ; Load from level 2 array
-        STA START_ADDRESS_NORMAL_PLATFORM,x
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_2,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_NORMAL_PLATFORM,x
-
-        LDA SPAWN_ADDRESS_LVL_2,x ; Load from level 2 array
-        STA SPAWN_ADDRESS,x
-        LDA SPAWN_ADDRESS_COLOR_LVL_2,x ; Load from level 2 array
-        STA SPAWN_ADDRESS_COLOR,x
-
-        LDA DOOR_ADDRESS_LVL_2,x ; Load from level 2 array
-        STA DOOR_ADDRESS,x
-        LDA DOOR_COLOR_ADDRESS_LVL_2,x ; Load from level 2 array
-        STA DOOR_COLOR_ADDRESS,x
-
-        LDA DOOR_BOTTOM_COLOR_ADDRESS_LVL_2,x ; Load from level 2 array
-        STA DOOR_BOTTOM_ADDRESS,x
-        LDA DOOR_BOTTOM_COLOR_ADDRESS_LVL_2,x ; Load from level 2 array
-        STA DOOR_BOTTOM_COLOR_ADDRESS,x
-
-        LDA GEM_ADDRESS_LVL_2,x ; Load from level 2 array
-        STA GEM_ADDRESS,x
-        LDA GEM_ADDRESS_COLOR_LVL_2,x ; Load from level 2 array
-        STA GEM_ADDRESS_COLOR,x
-
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_2,x ; Load from level 2 array
-        cmp #$FE
-        beq goto_start_level_2
-        inx 
-        jmp copy_lvl2
-
-copy_lvl3:
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_3,x ; Load from level 2 array
-        STA START_ADDRESS_NORMAL_PLATFORM,x
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_3,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_NORMAL_PLATFORM,x
-
-        LDA SPAWN_ADDRESS_LVL_3,x ; Load from level 2 array
-        STA SPAWN_ADDRESS,x
-        LDA SPAWN_ADDRESS_COLOR_LVL_3,x ; Load from level 2 array
-        STA SPAWN_ADDRESS_COLOR,x
-
-        LDA DOOR_ADDRESS_LVL_3,x ; Load from level 2 array
-        STA DOOR_ADDRESS,x
-        LDA DOOR_COLOR_ADDRESS_LVL_3,x ; Load from level 2 array
-        STA DOOR_COLOR_ADDRESS,x
-
-        LDA DOOR_BOTTOM_COLOR_ADDRESS_LVL_3,x ; Load from level 2 array
-        STA DOOR_BOTTOM_ADDRESS,x
-        LDA DOOR_BOTTOM_COLOR_ADDRESS_LVL_3,x ; Load from level 2 array
-        STA DOOR_BOTTOM_COLOR_ADDRESS,x
-
-        LDA GEM_ADDRESS_LVL_3,x ; Load from level 2 array
-        STA GEM_ADDRESS,x
-        LDA GEM_ADDRESS_COLOR_LVL_3,x ; Load from level 2 array
-        STA GEM_ADDRESS_COLOR,x
-
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_3,x ; Load from level 2 array
-        cmp #$FE
-        beq goto_start_level_3
-        inx 
-        jmp copy_lvl3
+    INC LEVEL_COUNTER       ; Increment the level counter
+    INC LEVEL_COUNTER
+    LDA #$01
+    STA PLATFORM_CHAR
+    jmp start_level
 
 
-copy_lvl4:
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_NORMAL_PLATFORM,x
-        LDA START_ADDRESS_COLOR_NORMAL_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_NORMAL_PLATFORM,x
 
-        LDA START_ADDRESS_DANGER_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_DANGER_PLATFORM,x
-        LDA START_ADDRESS_COLOR_DANGER_PLATFORM_LVL_4,x ; Load from level 2 array
-        STA START_ADDRESS_COLOR_DANGER_PLATFORM,x
 
-        LDA SPAWN_ADDRESS_LVL_4,x ; Load from level 2 array
-        STA SPAWN_ADDRESS,x
-        LDA SPAWN_ADDRESS_COLOR_LVL_4,x ; Load from level 2 array
-        STA SPAWN_ADDRESS_COLOR,x
 
-        LDA GEM_ADDRESS_LVL_4,x ; Load from level 2 array
-        STA GEM_ADDRESS,x
-        LDA GEM_ADDRESS_COLOR_LVL_4,x ; Load from level 2 array
-        STA GEM_ADDRESS_COLOR,x
-
-        LDA START_ADDRESS_NORMAL_PLATFORM_LVL_4,x ; Load from level 2 array
-        cmp #$FE
-        beq goto_start_level_4
-        inx 
-        jmp copy_lvl4
-
-goto_start_level_3:
-        ldy #$00
-        ldx #$00
-
-        jsr DelayLoop
-        jmp start_level
-        
-goto_start_level_4:
-        ldy #$00
-        ldx #$00
-
-        jsr DelayLoop
-        jmp start_level
