@@ -615,7 +615,7 @@ START_ADDRESS_NORMAL_PLATFORM_LVL_17:
 FIRST_PORTAL_LVL_18:
     .byte $fe
 GEM_ADDRESS_LVL_18:
-    .byte $B2, $1E, $04, $1F, $94, $1F, $ff
+    .byte $B2, $1E, $B9, $1E, $BB, $1E, $CE, $1E, $D0, $1E, $D2, $1E, $E3, $1E, $E9, $1E, $F9, $1E, $04, $1F, $10, $1F, $14, $1F, $27, $1F, $29, $1F, $3E, $1F, $94, $1F, $ff
 SECOND_PORTAL_LVL_18:
     .byte $fe
 SPAWN_ADDRESS_LVL_18:
